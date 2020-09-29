@@ -14,6 +14,10 @@ public class League {
     @GeneratedValue()
     private int id;
 
+
+    @NotBlank
+    private int apisportid;
+
     @NotBlank
     @Size(min = 5)
     @Size(max = 50)
@@ -70,5 +74,13 @@ public class League {
 
     public void setTeams(List<Team> teams) {
         this.teams = teams;
+    }
+
+    public int getApisportid() {
+        return apisportid;
+    }
+
+    public void setApisportid(int apisportid) {
+        this.apisportid = apisportid;
     }
 }

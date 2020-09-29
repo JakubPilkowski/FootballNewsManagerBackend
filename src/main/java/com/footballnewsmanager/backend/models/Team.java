@@ -5,6 +5,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 public class Team {
@@ -21,8 +22,12 @@ public class Team {
     @NotBlank
     private String logoUrl;
 
-    @OneToMany(mappedBy = "team")
-    private List<TeamTags> tags = new ArrayList<>();
+    @ManyToMany()
+    @JoinTable(
+            name = "team_tag",
+            joinColumns = @JoinColumn(name = "team_id"),
+            inverseJoinColumns = @JoinColumn(name = "team_tags_id"))
+    private Set<TeamTags> tags;
 
 
     @ManyToOne
@@ -61,11 +66,11 @@ public class Team {
     }
 
 
-    public List<TeamTags> getTags() {
+    public Set<TeamTags> getTags() {
         return tags;
     }
 
-    public void setTags(List<TeamTags> tags) {
+    public void setTags(Set<TeamTags> tags) {
         this.tags = tags;
     }
 }
