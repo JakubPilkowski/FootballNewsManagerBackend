@@ -9,4 +9,6 @@ public interface LeagueRepository extends JpaRepository<League, Integer> {
 
 
     Optional<League> findByApisportid(int id);
+
+    Optional<League> findByName(String name);
 }
