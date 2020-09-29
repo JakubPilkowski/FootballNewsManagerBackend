@@ -1,15 +1,16 @@
 package com.footballnewsmanager.backend.models;
 
-
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
+import java.util.Set;
 
 @Entity
-public class SingleNewsTags {
-
+@Table(name = "markers",uniqueConstraints = {
+        @UniqueConstraint(columnNames = {
+                "name"
+        })
+})
+public class Marker {
     @Id
     @GeneratedValue()
     private int id;
@@ -17,8 +18,8 @@ public class SingleNewsTags {
     @NotBlank
     private String name;
 
-    @ManyToOne
-    private SingleNews singleNews;
+    @ManyToMany(mappedBy = "markers")
+    private Set<Team> teams;
 
     public int getId() {
         return id;
@@ -36,12 +37,12 @@ public class SingleNewsTags {
         this.name = name;
     }
 
-    public SingleNews getNews() {
-        return singleNews;
+
+    public Set<Team> getTeams() {
+        return teams;
     }
 
-    public void setNews(SingleNews singleNews) {
-        this.singleNews = singleNews;
+    public void setTeams(Set<Team> teams) {
+        this.teams = teams;
     }
-
 }

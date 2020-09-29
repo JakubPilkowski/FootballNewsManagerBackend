@@ -3,11 +3,10 @@ package com.footballnewsmanager.backend.models;
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 @Entity
+@Table(name = "teams")
 public class Team {
 
     @Id
@@ -24,10 +23,10 @@ public class Team {
 
     @ManyToMany()
     @JoinTable(
-            name = "team_tag",
-            joinColumns = @JoinColumn(name = "team_id"),
-            inverseJoinColumns = @JoinColumn(name = "team_tags_id"))
-    private Set<TeamTags> tags;
+            name = "team_markers",
+            joinColumns = @JoinColumn(name = "teams_id"),
+            inverseJoinColumns = @JoinColumn(name = "markers_id"))
+    private Set<Marker> markers;
 
 
     @ManyToOne
@@ -66,11 +65,11 @@ public class Team {
     }
 
 
-    public Set<TeamTags> getTags() {
-        return tags;
+    public Set<Marker> getMarkers() {
+        return markers;
     }
 
-    public void setTags(Set<TeamTags> tags) {
-        this.tags = tags;
+    public void setMarkers(Set<Marker> markers) {
+        this.markers = markers;
     }
 }

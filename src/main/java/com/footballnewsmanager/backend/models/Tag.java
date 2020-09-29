@@ -1,17 +1,14 @@
 package com.footballnewsmanager.backend.models;
 
+
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
-import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = {
-                "name"
-        })
-})
-public class TeamTags {
+@Table(name = "tags")
+public class Tag {
+
     @Id
     @GeneratedValue()
     private int id;
@@ -20,7 +17,7 @@ public class TeamTags {
     private String name;
 
     @ManyToMany(mappedBy = "tags")
-    private Set<Team> teams;
+    private Set<News> news;
 
     public int getId() {
         return id;
@@ -38,12 +35,11 @@ public class TeamTags {
         this.name = name;
     }
 
-
-    public Set<Team> getTeams() {
-        return teams;
+    public Set<News> getNews() {
+        return news;
     }
 
-    public void setTeams(Set<Team> teams) {
-        this.teams = teams;
+    public void setNews(Set<News> news) {
+        this.news = news;
     }
 }

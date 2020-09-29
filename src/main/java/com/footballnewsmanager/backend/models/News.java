@@ -5,11 +5,10 @@ import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
 @Entity
-public class SingleNews {
+public class News {
 
     @Id
     @GeneratedValue()
@@ -28,8 +27,14 @@ public class SingleNews {
     @ManyToOne
     private Site site;
 
-    @OneToMany(mappedBy = "singleNews")
-    private List<SingleNewsTags> tags = new ArrayList<>();
+    @ManyToMany()
+    @JoinTable(
+            name = "news_tags",
+            joinColumns = @JoinColumn(name = "news_id"),
+            inverseJoinColumns = @JoinColumn(name = "tags_id"))
+    private Set<Tag> tags;
+
+
 
     private int clicks =0;
 
@@ -94,11 +99,12 @@ public class SingleNews {
         this.site = site;
     }
 
-    public List<SingleNewsTags> getTags() {
+    public Set<Tag> getTags() {
         return tags;
     }
 
-    public void setTags(List<SingleNewsTags> tags) {
+    public void setTags(Set<Tag> tags) {
         this.tags = tags;
     }
+
 }
