@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(name = "sites")
 public class Site {
 
     @Id
@@ -26,7 +27,8 @@ public class Site {
 
 
     @OneToMany(mappedBy = "site")
-    private List<SingleNews> singleNews = new ArrayList<>();
+    private List<News> news = new ArrayList<>();
+
 
     private int clicks = 0;
 
@@ -85,11 +87,11 @@ public class Site {
         this.description = description;
     }
 
-    public List<SingleNews> getNews() {
-        return singleNews;
+    public List<News> getNews() {
+        return news;
     }
 
-    public void setNews(List<SingleNews> singleNews) {
-        this.singleNews = singleNews;
+    public void setNews(List<News> aNews) {
+        this.news = aNews;
     }
 }

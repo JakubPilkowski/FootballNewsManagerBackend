@@ -7,10 +7,10 @@ import com.footballnewsmanager.backend.api.in_fakt.CountriesResponse;
 import com.footballnewsmanager.backend.api.in_fakt.CountriesResponseEntity;
 import com.footballnewsmanager.backend.models.League;
 import com.footballnewsmanager.backend.models.Team;
-import com.footballnewsmanager.backend.models.TeamTags;
+import com.footballnewsmanager.backend.models.Marker;
 import com.footballnewsmanager.backend.repositories.LeagueRepository;
 import com.footballnewsmanager.backend.repositories.TeamRepository;
-import com.footballnewsmanager.backend.repositories.TeamTagsRepository;
+import com.footballnewsmanager.backend.repositories.MarkerRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,40 +25,40 @@ public class TeamsController {
 
     TeamRepository teamRepository;
     LeagueRepository leagueRepository;
-    TeamTagsRepository teamTagsRepository;
+    MarkerRepository markerRepository;
 
     public TeamsController(TeamRepository teamRepository, LeagueRepository leagueRepository,
-                           TeamTagsRepository teamTagsRepository) {
+                           MarkerRepository markerRepository) {
         this.teamRepository = teamRepository;
         this.leagueRepository = leagueRepository;
-        this.teamTagsRepository = teamTagsRepository;
+        this.markerRepository = markerRepository;
     }
 
     @GetMapping("/tmp")
     public String createTeamTmp() {
         Team team = new Team();
         Optional<League> league = leagueRepository.findByApisportid(61);
-        Set<TeamTags> tagsList = new HashSet<>();
-        TeamTags teamNameTag = new TeamTags();
-        teamNameTag.setName("PSG");
-//        teamNameTag.setTeam(team);
-        TeamTags teamLigueTag = new TeamTags();
-        teamLigueTag.setName("Ligue 1");
-//        teamLigueTag.setTeam(team);
-//        tagsList.add(teamNameTag);
-//        tagsList.add(teamLigueTag);
+        Set<Marker> MarkersList = new HashSet<>();
+        Marker teamNameMarker = new Marker();
+        teamNameMarker.setName("PSG");
+//        teamNameMarker.setTeam(team);
+        Marker teamLigueMarker = new Marker();
+        teamLigueMarker.setName("Ligue 1");
+//        teamLigueMarker.setTeam(team);
+//        MarkersList.add(teamNameMarker);
+//        MarkersList.add(teamLigueMarker);
         league.ifPresent(team::setLeague);
         team.setName("PSG");
         team.setLogoUrl("jakieś logo");
-        tagsList.add(teamNameTag);
-        tagsList.add(teamLigueTag);
-        team.setTags(tagsList);
-//        team.setTags(tagsList);
-        teamTagsRepository.saveAll(tagsList);
+        MarkersList.add(teamNameMarker);
+        MarkersList.add(teamLigueMarker);
+        team.setMarkers(MarkersList);
+//        team.setMarkers(MarkersList);
+        markerRepository.saveAll(MarkersList);
         teamRepository.save(team);
 
-//        teamNameTag.setTeam(team);
-//        teamLigueTag.setTeam(team);
+//        teamNameMarker.setTeam(team);
+//        teamLigueMarker.setTeam(team);
 
         return "success";
     }
@@ -67,26 +67,26 @@ public class TeamsController {
     public String createTeamTmp2() {
         Team team = new Team();
         Optional<League> league = leagueRepository.findByApisportid(61);
-        Set<TeamTags> tagsList = new HashSet<>();
-        TeamTags teamNameTag = new TeamTags();
-        teamNameTag.setName("Marsylia");
-//        teamNameTag.setTeam(team);
-        Optional<TeamTags> teamLigueTag = teamTagsRepository.findByName("Ligue 1");
-//        teamLigueTag.setTeam(team);
-//        tagsList.add(teamNameTag);
-//        tagsList.add(teamLigueTag);
+        Set<Marker> markersList = new HashSet<>();
+        Marker teamNameMarker = new Marker();
+        teamNameMarker.setName("Marsylia");
+//        teamNameMarker.setTeam(team);
+        Optional<Marker> teamLigueMarker = markerRepository.findByName("Ligue 1");
+//        teamLigueMarker.setTeam(team);
+//        MarkersList.add(teamNameMarker);
+//        MarkersList.add(teamLigueMarker);
         league.ifPresent(team::setLeague);
         team.setName("Marsylia");
         team.setLogoUrl("jakieś logo 2");
-        tagsList.add(teamNameTag);
-        teamLigueTag.ifPresent(tagsList::add);
-        team.setTags(tagsList);
-//        team.setTags(tagsList);
-        teamTagsRepository.save(teamNameTag);
+        markersList.add(teamNameMarker);
+        teamLigueMarker.ifPresent(markersList::add);
+        team.setMarkers(markersList);
+//        team.setMarkers(MarkersList);
+        markerRepository.save(teamNameMarker);
         teamRepository.save(team);
 
-//        teamNameTag.setTeam(team);
-//        teamLigueTag.setTeam(team);
+//        teamNameMarker.setTeam(team);
+//        teamLigueMarker.setTeam(team);
 
         return "success";
     }
@@ -98,17 +98,17 @@ public class TeamsController {
         WebClient inFaktWebClient = WebClient.create("https://api.infakt.pl/v3");
         List<League> leagues = leagueRepository.findAll();
         teamRepository.deleteAll();
-        teamTagsRepository.deleteAll();
-//        TeamTags leagueTag = new TeamTags();
+        markerRepository.deleteAll();
+//        TeamMarkers leagueMarker = new TeamMarkers();
 //        Optional<League> league1 = leagueRepository.findByApisportid(61);
 //        if(league1.isPresent()){
-//            leagueTag.setName(league1.get().getName());
-//            teamTagsRepository.save(leagueTag);
+//            leagueMarker.setName(league1.get().getName());
+//            teamMarkersRepository.save(leagueMarker);
 //        }
         for (League league : leagues) {
-            TeamTags leagueTag = new TeamTags();
-            leagueTag.setName(league.getName());
-            teamTagsRepository.save(leagueTag);
+            Marker leagueMarker = new Marker();
+            leagueMarker.setName(league.getName());
+            markerRepository.save(leagueMarker);
             if (league.getApisportid() != 0)
                 apiSportWebClient
                         .get()
@@ -120,21 +120,21 @@ public class TeamsController {
                         .subscribe(teamsResponse -> {
                             for (TeamResponse teamRes : teamsResponse.getResponse()) {
                                 Team team = new Team();
-                                Set<TeamTags> tagsList = new HashSet<>();
-                                TeamTags teamNameTag = new TeamTags();
-                                teamNameTag.setName(teamRes.getTeam().getName());
-                                tagsList.add(teamNameTag);
-                                tagsList.add(leagueTag);
-                                teamTagsRepository.save(teamNameTag);
-                                //                        tagsList.add();
+                                Set<Marker> markersList = new HashSet<>();
+                                Marker teamNameMarker = new Marker();
+                                teamNameMarker.setName(teamRes.getTeam().getName());
+                                markersList.add(teamNameMarker);
+                                markersList.add(leagueMarker);
+                                markerRepository.save(teamNameMarker);
+                                //                        MarkersList.add();
 //                            Optional<League> league = leagueRepository.findByApisportid(61);
 //                            league.ifPresent(team::setLeague);
                                 team.setLeague(league);
                                 team.setName(teamRes.getTeam().getName());
                                 team.setLogoUrl(teamRes.getTeam().getLogo());
-                                team.setTags(tagsList);
+                                team.setMarkers(markersList);
                                 teamRepository.save(team);
-//                        team.setTags();
+//                        team.setMarkers();
                             }
                         });
             else{
@@ -146,16 +146,16 @@ public class TeamsController {
                         .subscribe(countriesResponse -> {
                            for(CountriesResponseEntity countryRes: countriesResponse.getEntities()){
                                Team team = new Team();
-                               Set<TeamTags> teamTags = new HashSet<>();
-                               TeamTags teamNameTag = new TeamTags();
-                               teamNameTag.setName(countryRes.getPolish_name());
-                               teamTags.add(teamNameTag);
-                               teamTags.add(leagueTag);
+                               Set<Marker> teamMarkers = new HashSet<>();
+                               Marker teamNameMarker = new Marker();
+                               teamNameMarker.setName(countryRes.getPolish_name());
+                               teamMarkers.add(teamNameMarker);
+                               teamMarkers.add(leagueMarker);
                                team.setLeague(league);
                                team.setLogoUrl("");
                                team.setName(countryRes.getPolish_name());
-                               teamTagsRepository.save(teamNameTag);
-                               team.setTags(teamTags);
+                               markerRepository.save(teamNameMarker);
+                               team.setMarkers(teamMarkers);
                                teamRepository.save(team);
                            }
                         });
