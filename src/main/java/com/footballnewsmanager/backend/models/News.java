@@ -12,10 +12,10 @@ import java.util.Set;
 public class News {
 
     @Id
-    private int news_site_id;
+    private int newsSiteId;
 
     @Id
-    private int news_id;
+    private int newsId;
 
 
     @NotBlank
@@ -122,19 +122,19 @@ public class News {
         this.imageUrl = imageUrl;
     }
 
-    public int getNews_site_id() {
-        return news_site_id;
+    public int getNewsSiteId() {
+        return newsSiteId;
     }
 
-    public void setNews_site_id(int site_id) {
-        this.news_site_id = site_id;
+    public void setNewsSiteId(int site_id) {
+        this.newsSiteId = site_id;
     }
 
-    public int getNews_id() {
-        return news_id;
+    public int getNewsId() {
+        return newsId;
     }
 
-    public void setNews_id(int news_id) {
-        this.news_id = news_id;
+    public void setNewsId(int news_id) {
+        this.newsId = news_id;
     }
 }
