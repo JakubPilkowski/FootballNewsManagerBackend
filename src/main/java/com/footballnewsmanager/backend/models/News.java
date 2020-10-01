@@ -5,6 +5,8 @@ import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -41,6 +43,17 @@ public class News {
             inverseJoinColumns = @JoinColumn(name = "tags_id"))
     private Set<Tag> tags;
 
+
+    public List<TeamNews> getTeamNews() {
+        return teamNews;
+    }
+
+    public void setTeamNews(List<TeamNews> teamNews) {
+        this.teamNews = teamNews;
+    }
+
+    @OneToMany(mappedBy = "news")
+    private List<TeamNews> teamNews = new ArrayList<>();
 
 
     private int clicks =0;
