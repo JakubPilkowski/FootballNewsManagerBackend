@@ -17,9 +17,10 @@ public class Football_Italia_Parser {
 
     private final SiteRepository siteRepository;
     private final NewsRepository newsRepository;
+    private final TeamRepository teamRepository;
     private final MarkerRepository markerRepository;
     private final TagRepository tagRepository;
-
+    private final TeamNewsRepository teamNewsRepository;
     private final List<String> italianTeams = new ArrayList<>(Arrays.asList(
             "Atalanta",
             "Benevento",
@@ -43,18 +44,21 @@ public class Football_Italia_Parser {
             "Verona"
     ));
 
-    public Football_Italia_Parser(SiteRepository siteRepository, NewsRepository newsRepository, MarkerRepository markerRepository, TagRepository tagRepository) {
+    public Football_Italia_Parser(SiteRepository siteRepository, NewsRepository newsRepository, TeamRepository teamRepository, MarkerRepository markerRepository, TagRepository tagRepository, TeamNewsRepository teamNewsRepository) {
         this.siteRepository = siteRepository;
         this.newsRepository = newsRepository;
+        this.teamRepository = teamRepository;
         this.markerRepository = markerRepository;
         this.tagRepository = tagRepository;
+        this.teamNewsRepository = teamNewsRepository;
     }
 
-    public void getNews(){
+    public void getNews() {
         for (String italianTeam : italianTeams) {
             Document footballItaliaMainDoc;
             try {
-                footballItaliaMainDoc = Jsoup.connect("https://www.football-italia.net/clubs/"+italianTeam+"/news").get();
+                footballItaliaMainDoc = Jsoup.connect("https://www.football-italia.net/clubs/" + italianTeam + "/news").get();
+//            footballItaliaMainDoc = Jsoup.connect("https://www.football-italia.net/clubs/Napoli/news").get();
                 List<String> titles = footballItaliaMainDoc.body().getElementsByClass("news-idx-item-title").eachText();
                 List<String> newsUrls = footballItaliaMainDoc.body().getElementsByClass("news-idx-item-title").select("a").eachAttr("href");
                 String footballItaliaSiteUrl = "https://www.football-italia.net";
@@ -106,16 +110,35 @@ public class Football_Italia_Parser {
                     site.ifPresent(news::setSite);
                     site.ifPresent(value -> news.setNewsSiteId(value.getId()));
                     news.setNewsId(news_ids.get(i));
-                    if(newsRepository.existsByNewsSiteId(news.getNewsSiteId()) && newsRepository.existsByNewsId(news.getNewsId())){
+                    if (newsRepository.existsByNewsSiteId(news.getNewsSiteId()) && newsRepository.existsByNewsId(news.getNewsId())) {
                         break;
-                    }
-                    else{
+                    } else {
                         news.setTitle(title);
                         news.setNewsUrl(newsUrl);
                         news.setImageUrl(imageUrl);
                         news.setDate(dates.get(i));
                         news.setTags(tags);
                         newsRepository.save(news);
+                        List<Team> teams = teamRepository.findAll();
+                        for (Team team : teams) {
+                            Set<Marker> markerList = team.getMarkers();
+                            for (Marker marker :
+                                    markerList) {
+                                for (Tag tag : tags) {
+                                    if (tag.getName().equals(marker.getName())) {
+                                        Set<Team> teamSet = marker.getTeams();
+                                        for (Team teamFromMarker : teamSet) {
+                                            TeamNews teamNews = new TeamNews();
+                                            teamNews.setNews(news);
+                                            teamNews.setTeam(teamFromMarker);
+                                            if (!teamNewsRepository.existsByTeamAndNews(teamFromMarker, news)) {
+                                                teamNewsRepository.save(teamNews);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             } catch (IOException e) {

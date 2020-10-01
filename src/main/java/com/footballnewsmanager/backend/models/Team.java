@@ -3,6 +3,8 @@ package com.footballnewsmanager.backend.models;
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -28,6 +30,9 @@ public class Team {
             inverseJoinColumns = @JoinColumn(name = "markers_id"))
     private Set<Marker> markers;
 
+
+    @OneToMany(mappedBy = "team")
+    private List<TeamNews> teamNews= new ArrayList<>();
 
     @ManyToOne
     private League league;
@@ -71,5 +76,13 @@ public class Team {
 
     public void setMarkers(Set<Marker> markers) {
         this.markers = markers;
+    }
+
+    public List<TeamNews> getTeamNews() {
+        return teamNews;
+    }
+
+    public void setTeamNews(List<TeamNews> teamNews) {
+        this.teamNews = teamNews;
     }
 }
