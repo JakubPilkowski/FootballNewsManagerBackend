@@ -80,6 +80,7 @@ public class TransferyInfoParser {
                     newsRepository.save(news);
                     List<Team> teams = teamRepository.findAll();
                     ParserHelper.connectNewsWithTeams(teams, tagSet, news, teamNewsRepository);
+                    System.out.println("Koniec");
                 }
             }
         } catch (IOException e) {
