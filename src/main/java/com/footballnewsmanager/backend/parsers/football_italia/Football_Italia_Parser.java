@@ -1,6 +1,7 @@
 package com.footballnewsmanager.backend.parsers.football_italia;
 
 import com.footballnewsmanager.backend.models.*;
+import com.footballnewsmanager.backend.parsers.ParserHelper;
 import com.footballnewsmanager.backend.repositories.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -58,87 +59,51 @@ public class Football_Italia_Parser {
             Document footballItaliaMainDoc;
             try {
                 footballItaliaMainDoc = Jsoup.connect("https://www.football-italia.net/clubs/" + italianTeam + "/news").get();
-//            footballItaliaMainDoc = Jsoup.connect("https://www.football-italia.net/clubs/Napoli/news").get();
-                List<String> titles = footballItaliaMainDoc.body().getElementsByClass("news-idx-item-title").eachText();
-                List<String> newsUrls = footballItaliaMainDoc.body().getElementsByClass("news-idx-item-title").select("a").eachAttr("href");
+                List<String> tmpNewsUrls = footballItaliaMainDoc.body().getElementsByClass("news-idx-item-title").select("a").eachAttr("href");
+                List<String> newsUrls = new ArrayList<>();
                 String footballItaliaSiteUrl = "https://www.football-italia.net";
-                List<String> imageUrls = new ArrayList<>();
                 List<Document> docs = new ArrayList<>();
-                List<Integer> news_ids = new ArrayList<>();
-                List<LocalDate> dates = new ArrayList<>();
-                List<String> contents = new ArrayList<>();
+                List<Integer> newsIds = new ArrayList<>();
 
-                for (int i = 0; i < newsUrls.size(); i++) {
-                    String news_id = newsUrls.get(i).split("/")[1];
-                    news_ids.add(Integer.parseInt(news_id));
-                    String fullUrl = footballItaliaSiteUrl + newsUrls.get(i);
-                    newsUrls.set(i, fullUrl);
-                    docs.add(Jsoup.connect(fullUrl).get());
-                }
-                for (Document doc : docs) {
-                    imageUrls.add(doc.body().getElementsByClass("story-image-wrapper").select("img").first().attr("src"));
-                    String[] date = doc.body().getElementsByClass("date").html().split(" ");
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d yyyy", Locale.ENGLISH);
-                    LocalDate localDate = LocalDate.parse(date[1] + " " + date[2] + " " + date[3], formatter);
-                    dates.add(localDate);
-                    contents.add(doc.body().getElementsByClass("content").select("p").text());
-                }
-                for (int i = 0; i < titles.size(); i++) {
-                    Set<Tag> tags = new HashSet<>();
-                    String footballItaliaEndNewsSyntax = "Watch Serie A live in the UK on Premier Sports for just £9.99 per month including live LaLiga, Eredivisie, Scottish Cup Football and more. Visit: https://www.premiersports.com/subscribenow";
-                    String content = contents.get(i).replace(footballItaliaEndNewsSyntax, "");
-                    List<Marker> markers = markerRepository.findAll();
-                    for (Marker marker : markers) {
-                        if (content.contains(marker.getName())) {
-                            Tag tag = new Tag();
-                            tag.setName(marker.getName());
-                            if (!tagRepository.existsByName(tag.getName())) {
-                                tagRepository.save(tag);
-                                tags.add(tag);
-                            } else {
-                                Optional<Tag> tmpTag = tagRepository.findByName(tag.getName());
-                                tmpTag.ifPresent(tags::add);
-                            }
+                Optional<Site> site = siteRepository.findByName("Football Italia");
+                if (site.isPresent()) {
+                    for (String tmpNewsUrl : tmpNewsUrls) {
+                        int newsId = Integer.parseInt(tmpNewsUrl.split("/")[1]);
+                        if (!newsRepository.existsByNewsSiteIdAndNewsId(site.get().getId(), newsId)) {
+                            String articleLink = footballItaliaSiteUrl + tmpNewsUrl;
+                            newsUrls.add(articleLink);
+                            newsIds.add(newsId);
+                            docs.add(Jsoup.connect(articleLink).get());
                         }
                     }
+                }
 
-                    Optional<Site> site = siteRepository.findByName("Football Italia");
-                    String title = titles.get(i);
-                    String imageUrl = imageUrls.get(i);
-                    String newsUrl = newsUrls.get(i);
-                    News news = new News();
-                    site.ifPresent(news::setSite);
-                    site.ifPresent(value -> news.setNewsSiteId(value.getId()));
-                    news.setNewsId(news_ids.get(i));
-                    if (newsRepository.existsByNewsSiteId(news.getNewsSiteId()) && newsRepository.existsByNewsId(news.getNewsId())) {
-                        break;
-                    } else {
+                for (Document doc : docs) {
+                    int index = docs.indexOf(doc);
+                    String title = doc.getElementsByClass("title").text();
+                    String imgUrl = doc.getElementsByClass("story-image-wrapper").select("img").first().attr("src");
+                    String[] date = doc.getElementsByClass("date").html().split(" ");
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d yyyy", Locale.ENGLISH);
+                    LocalDate localDate = LocalDate.parse(date[1] + " " + date[2] + " " + date[3], formatter);
+                    String content = doc.body().getElementsByClass("content").select("p").text();
+                    String footballItaliaEndNewsSyntax = "Watch Serie A live in the UK on Premier Sports for just £9.99 per month including live LaLiga, Eredivisie, Scottish Cup Football and more. Visit: https://www.premiersports.com/subscribenow";
+                    String endContent = content.replace(footballItaliaEndNewsSyntax, "");
+                    List<Marker> markers = markerRepository.findAll();
+                    Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, endContent, tagRepository));
+
+                    if (!newsRepository.existsByNewsSiteIdAndNewsId(newsIds.get(index), site.get().getId())) {
+                        News news = new News();
+                        news.setNewsSiteId(site.get().getId());
+                        news.setNewsId(newsIds.get(index));
                         news.setTitle(title);
-                        news.setNewsUrl(newsUrl);
-                        news.setImageUrl(imageUrl);
-                        news.setDate(dates.get(i));
-                        news.setTags(tags);
+                        news.setNewsUrl(newsUrls.get(index));
+                        news.setImageUrl(imgUrl);
+                        news.setSite(site.get());
+                        news.setDate(localDate);
+                        news.setTags(tagSet);
                         newsRepository.save(news);
                         List<Team> teams = teamRepository.findAll();
-                        for (Team team : teams) {
-                            Set<Marker> markerList = team.getMarkers();
-                            for (Marker marker :
-                                    markerList) {
-                                for (Tag tag : tags) {
-                                    if (tag.getName().equals(marker.getName())) {
-                                        Set<Team> teamSet = marker.getTeams();
-                                        for (Team teamFromMarker : teamSet) {
-                                            TeamNews teamNews = new TeamNews();
-                                            teamNews.setNews(news);
-                                            teamNews.setTeam(teamFromMarker);
-                                            if (!teamNewsRepository.existsByTeamAndNews(teamFromMarker, news)) {
-                                                teamNewsRepository.save(teamNews);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        ParserHelper.connectNewsWithTeams(teams, tagSet, news, teamNewsRepository);
                     }
                 }
             } catch (IOException e) {

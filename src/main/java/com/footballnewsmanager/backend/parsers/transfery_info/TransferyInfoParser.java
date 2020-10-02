@@ -1,13 +1,16 @@
 package com.footballnewsmanager.backend.parsers.transfery_info;
 
+import com.footballnewsmanager.backend.models.*;
+import com.footballnewsmanager.backend.parsers.ParserHelper;
 import com.footballnewsmanager.backend.repositories.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDate;
+import java.util.*;
 
 @Component
 public class TransferyInfoParser {
@@ -29,35 +32,57 @@ public class TransferyInfoParser {
     }
 
 
-    public void getNews(){
+    public void getNews() {
         Document transferyInfoMainDoc;
         String tranferyInfoMainUrl = "https://transfery.info";
-        try{
+        try {
             transferyInfoMainDoc = Jsoup.connect("https://transfery.info/aktualnosci").get();
-//            System.out.println(transferyInfoMainDoc.getElementsByClass("article-links").html());
-            List<String> titles = transferyInfoMainDoc.getElementsByClass("article-link-description").eachText();
-            List<String> newsUrls = transferyInfoMainDoc.getElementsByClass("article-links").select("a").eachAttr("href");
+            List<String> tmpNewsUrls = transferyInfoMainDoc.getElementsByClass("article-links").select("a").eachAttr("href");
+            List<String> newsUrls = new ArrayList<>();
             List<Integer> newsIds = new ArrayList<>();
             List<Document> docs = new ArrayList<>();
-            List<String> imgUrls = new ArrayList<>();
-            //            for (String title :
-//                    titles) {
-//                System.out.println(title);
-//            }
-            for (int i=0; i<newsUrls.size(); i++) {
-                newsIds.add(Integer.parseInt(newsUrls.get(i).split("/")[3]));
-                String articleLink = tranferyInfoMainUrl+newsUrls.get(i);
-                newsUrls.set(i, articleLink);
-                docs.add(Jsoup.connect(articleLink).get());
+            Optional<Site> site = siteRepository.findByName("Transfery.info");
+            if (site.isPresent()) {
+                for (String tmpNewsUrl : tmpNewsUrls) {
+                    int newsId = Integer.parseInt(tmpNewsUrl.split("/")[3]);
+                    if (!newsRepository.existsByNewsSiteIdAndNewsId(site.get().getId(), newsId)) {
+                        String articleLink = tranferyInfoMainUrl + tmpNewsUrl;
+                        newsUrls.add(articleLink);
+                        newsIds.add(newsId);
+                        docs.add(Jsoup.connect(articleLink).get());
+                    }
+                }
             }
+
             for (Document doc :
                     docs) {
-                String imgUrl = doc.getElementsByTag("article").select("picture").get(0).select("source").get(1).attr("srcset");
-                imgUrls.add(tranferyInfoMainUrl+"/"+imgUrl);
-                System.out.println(tranferyInfoMainUrl+"/"+imgUrl);
+                int index = docs.indexOf(doc);
+                Elements articleElement = doc.getElementsByTag("article");
+                String title = articleElement.get(0).select("h1").text();
+                String imgUrl = articleElement.select("picture").get(0).select("source").get(1).attr("srcset");
+                String date = articleElement.select("time").text().split(" ")[0];
+                LocalDate localDate = LocalDate.parse(date);
+                String articleTagSection = doc.getElementsByClass("d-inline").text();
+
+                List<Marker> markers = markerRepository.findAll();
+                Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, articleTagSection, tagRepository));
+
+                if (!newsRepository.existsByNewsSiteIdAndNewsId(newsIds.get(index), site.get().getId())) {
+                    News news = new News();
+                    news.setNewsSiteId(site.get().getId());
+                    news.setNewsId(newsIds.get(index));
+                    news.setTitle(title);
+                    news.setNewsUrl(newsUrls.get(index));
+                    news.setImageUrl(imgUrl);
+                    news.setSite(site.get());
+                    news.setDate(localDate);
+                    news.setTags(tagSet);
+                    newsRepository.save(news);
+                    List<Team> teams = teamRepository.findAll();
+                    ParserHelper.connectNewsWithTeams(teams, tagSet, news, teamNewsRepository);
+                }
             }
-        }
-        catch(IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
 

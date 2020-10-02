@@ -24,7 +24,7 @@ public class NewsController {
     public String addNewsFromFootballItalia(){
 
 
-//        footballItaliaParser.getNews();
+        footballItaliaParser.getNews();
         transferyInfoParser.getNews();
 
         return "success";
