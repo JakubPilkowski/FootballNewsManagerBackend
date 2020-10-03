@@ -6,6 +6,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -36,12 +37,15 @@ public class News {
     @ManyToOne
     private Site site;
 
-    @ManyToMany()
-    @JoinTable(
-            name = "news_tags",
-            joinColumns =  { @JoinColumn( name = "news_site_id"), @JoinColumn(name="news_id") },
-            inverseJoinColumns = @JoinColumn(name = "tags_id"))
-    private Set<Tag> tags;
+    @OneToMany(mappedBy = "news", cascade = CascadeType.ALL,orphanRemoval = true)
+    private Set<NewsTag> tags = new HashSet<>();
+
+//    @ManyToMany(cascade = CascadeType.ALL)
+//    @JoinTable(
+//            name = "news_tags",
+//            joinColumns =  { @JoinColumn( name = "news_site_id"), @JoinColumn(name="news_id") },
+//            inverseJoinColumns = @JoinColumn(name = "tags_id"))
+//    private Set<Tag> tags;
 
 
     public List<TeamNews> getTeamNews() {
@@ -52,7 +56,7 @@ public class News {
         this.teamNews = teamNews;
     }
 
-    @OneToMany(mappedBy = "news")
+    @OneToMany(mappedBy = "news", cascade = CascadeType.ALL,orphanRemoval = true)
     private List<TeamNews> teamNews = new ArrayList<>();
 
 
@@ -119,13 +123,13 @@ public class News {
         this.site = site;
     }
 
-    public Set<Tag> getTags() {
-        return tags;
-    }
-
-    public void setTags(Set<Tag> tags) {
-        this.tags = tags;
-    }
+//    public Set<Tag> getTags() {
+//        return tags;
+//    }
+//
+//    public void setTags(Set<Tag> tags) {
+//        this.tags = tags;
+//    }
 
     public String getImageUrl() {
         return imageUrl;
@@ -149,5 +153,13 @@ public class News {
 
     public void setNewsId(int news_id) {
         this.newsId = news_id;
+    }
+
+    public Set<NewsTag> getTags() {
+        return tags;
+    }
+
+    public void setTags(Set<NewsTag> tags) {
+        this.tags = tags;
     }
 }

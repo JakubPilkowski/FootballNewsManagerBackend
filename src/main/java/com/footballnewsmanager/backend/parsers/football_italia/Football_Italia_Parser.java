@@ -22,6 +22,7 @@ public class Football_Italia_Parser {
     private final MarkerRepository markerRepository;
     private final TagRepository tagRepository;
     private final TeamNewsRepository teamNewsRepository;
+    private final NewsTagRepository newsTagRepository;
     private final List<String> italianTeams = new ArrayList<>(Arrays.asList(
             "Atalanta",
             "Benevento",
@@ -45,13 +46,14 @@ public class Football_Italia_Parser {
             "Verona"
     ));
 
-    public Football_Italia_Parser(SiteRepository siteRepository, NewsRepository newsRepository, TeamRepository teamRepository, MarkerRepository markerRepository, TagRepository tagRepository, TeamNewsRepository teamNewsRepository) {
+    public Football_Italia_Parser(SiteRepository siteRepository, NewsRepository newsRepository, TeamRepository teamRepository, MarkerRepository markerRepository, TagRepository tagRepository, TeamNewsRepository teamNewsRepository, NewsTagRepository newsTagRepository) {
         this.siteRepository = siteRepository;
         this.newsRepository = newsRepository;
         this.teamRepository = teamRepository;
         this.markerRepository = markerRepository;
         this.tagRepository = tagRepository;
         this.teamNewsRepository = teamNewsRepository;
+        this.newsTagRepository = newsTagRepository;
     }
 
     public void getNews() {
@@ -100,8 +102,15 @@ public class Football_Italia_Parser {
                         news.setImageUrl(imgUrl);
                         news.setSite(site.get());
                         news.setDate(localDate);
-                        news.setTags(tagSet);
+//                        news.setTags(tagSet);
                         newsRepository.save(news);
+                        for (Tag tag :
+                                tagSet) {
+                            NewsTag newsTag = new NewsTag();
+                            newsTag.setNews(news);
+                            newsTag.setTag(tag);
+                            newsTagRepository.save(newsTag);
+                        }
                         List<Team> teams = teamRepository.findAll();
                         ParserHelper.connectNewsWithTeams(teams, tagSet, news, teamNewsRepository);
                     }
