@@ -1,6 +1,9 @@
 package com.footballnewsmanager.backend.models;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import java.util.HashSet;
@@ -22,6 +25,7 @@ public class Tag {
     private String name;
 
     @OneToMany(mappedBy = "tag", cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonBackReference
     private Set<NewsTag> tags = new HashSet<>();
 
 //    @ManyToMany(mappedBy = "tags")

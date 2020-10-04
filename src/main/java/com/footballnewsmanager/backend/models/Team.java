@@ -1,5 +1,9 @@
 package com.footballnewsmanager.backend.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
@@ -32,6 +36,7 @@ public class Team {
 
 
     @OneToMany(mappedBy = "team")
+    @JsonIgnore
     private List<TeamNews> teamNews= new ArrayList<>();
 
     @ManyToOne

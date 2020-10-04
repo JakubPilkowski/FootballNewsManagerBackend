@@ -10,5 +10,8 @@ import org.springframework.stereotype.Component;
 public class LeaguesScheduling {
 
 
+    @Scheduled(cron = "0 0 0 30 7 *")
+    public void updateLeagues(){
 
+    }
 }

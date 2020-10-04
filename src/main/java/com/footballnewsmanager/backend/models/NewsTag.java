@@ -1,5 +1,8 @@
 package com.footballnewsmanager.backend.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import javax.persistence.*;
 
 @Entity
@@ -35,6 +38,7 @@ public class NewsTag {
     }
 
     @ManyToOne
+    @JsonBackReference
     private News news;
 
     @ManyToOne

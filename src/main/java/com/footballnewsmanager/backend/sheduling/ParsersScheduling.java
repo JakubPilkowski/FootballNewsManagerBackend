@@ -33,7 +33,6 @@ public class ParsersScheduling {
         transferyInfoParser.getNews();
     }
 
-
     @Scheduled(cron = "0 0 12 * * *")
     @Transactional
     public void deleteOldNews(){
