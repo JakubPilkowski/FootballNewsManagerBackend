@@ -2,6 +2,7 @@ package com.footballnewsmanager.backend.models;
 
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -19,6 +20,7 @@ public class League {
 
 
     @NotBlank
+    @JsonIgnore
     private int apisportid;
 
     @NotBlank

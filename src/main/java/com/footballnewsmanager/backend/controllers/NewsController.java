@@ -39,8 +39,6 @@ public class NewsController {
 
     @GetMapping("/tmpAddNews")
     public String addNewsFromFootballItalia(){
-
-
         footballItaliaParser.getNews();
         transferyInfoParser.getNews();
 
