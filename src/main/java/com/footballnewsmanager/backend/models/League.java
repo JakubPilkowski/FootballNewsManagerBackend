@@ -1,6 +1,9 @@
 package com.footballnewsmanager.backend.models;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
@@ -17,6 +20,7 @@ public class League {
 
 
     @NotBlank
+    @JsonIgnore
     private int apisportid;
 
     @NotBlank
@@ -33,6 +37,7 @@ public class League {
     private LeagueType type;
 
     @OneToMany(mappedBy = "league")
+    @JsonBackReference
     private List<Team> teams = new ArrayList<>();
 
     public int getId() {

@@ -1,8 +1,12 @@
 package com.footballnewsmanager.backend.models;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -20,8 +24,12 @@ public class Tag {
     @NotBlank
     private String name;
 
-    @ManyToMany(mappedBy = "tags")
-    private Set<News> news;
+    @OneToMany(mappedBy = "tag", cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonBackReference
+    private Set<NewsTag> tags = new HashSet<>();
+
+//    @ManyToMany(mappedBy = "tags")
+//    private Set<News> news;
 
     public int getId() {
         return id;
@@ -39,11 +47,19 @@ public class Tag {
         this.name = name;
     }
 
-    public Set<News> getNews() {
-        return news;
+    public Set<NewsTag> getTags() {
+        return tags;
     }
 
-    public void setNews(Set<News> news) {
-        this.news = news;
+    public void setTags(Set<NewsTag> tags) {
+        this.tags = tags;
     }
+
+//    public Set<News> getNews() {
+//        return news;
+//    }
+//
+//    public void setNews(Set<News> news) {
+//        this.news = news;
+//    }
 }

@@ -1,5 +1,7 @@
 package com.footballnewsmanager.backend.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import java.util.Set;
@@ -18,7 +20,8 @@ public class Marker {
     @NotBlank
     private String name;
 
-    @ManyToMany(mappedBy = "markers")
+    @ManyToMany(mappedBy = "markers", fetch = FetchType.EAGER)
+    @JsonBackReference
     private Set<Team> teams;
 
     public int getId() {
