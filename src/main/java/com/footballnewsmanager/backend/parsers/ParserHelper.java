@@ -13,29 +13,45 @@ import java.util.Set;
 public class ParserHelper {
 
 
+    public static void connectNewsWithTeams(Set<Tag> tagSet, News news, TeamNewsRepository teamNewsRepository, MarkerRepository markerRepository) {
 
-    public static void connectNewsWithTeams(List<Team> teams, Set<Tag>tagSet, News news, TeamNewsRepository teamNewsRepository){
-        for (Team team : teams) {
-            Set<Marker> markerList = team.getMarkers();
-            for (Marker marker :
-                    markerList) {
-                for (Tag tag : tagSet) {
-                    if (tag.getName().equals(marker.getName())) {
-                        Set<Team> teamSet = marker.getTeams();
-                        for (Team teamFromMarker : teamSet) {
-                            if (!teamNewsRepository.existsByTeamAndNews(teamFromMarker, news)) {
-                                TeamNews teamNews = new TeamNews();
-                                teamNews.setNews(news);
-                                teamNews.setTeam(teamFromMarker);
-                                teamNewsRepository.save(teamNews);
-                            }
-                        }
+        for (Tag tag : tagSet) {
+            Optional<Marker> marker = markerRepository.findByName(tag.getName());
+            if (marker.isPresent()) {
+                Set<Team> teamSet = marker.get().getTeams();
+                for (Team teamFromMarker : teamSet) {
+                    if (!teamNewsRepository.existsByTeamAndNews(teamFromMarker, news)) {
+                        TeamNews teamNews = new TeamNews();
+                        teamNews.setNews(news);
+                        teamNews.setTeam(teamFromMarker);
+                        teamNewsRepository.save(teamNews);
                     }
                 }
             }
         }
+
+//        for (Team team : teams) {
+//            Set<Marker> markerList = team.getMarkers();
+//            for (Marker marker :
+//                    markerList) {
+//                for (Tag tag : tagSet) {
+//                    if (tag.getName().equals(marker.getName())) {
+//                        Set<Team> teamSet = marker.getTeams();
+//                        for (Team teamFromMarker : teamSet) {
+//                            if (!teamNewsRepository.existsByTeamAndNews(teamFromMarker, news)) {
+//                                TeamNews teamNews = new TeamNews();
+//                                teamNews.setNews(news);
+//                                teamNews.setTeam(teamFromMarker);
+//                                teamNewsRepository.save(teamNews);
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
     }
-    public static Set<Tag> getTags(List<Marker>markers, String article, TagRepository tagRepository){
+
+    public static Set<Tag> getTags(List<Marker> markers, String article, TagRepository tagRepository) {
         Set<Tag> tagSet = new HashSet<>();
         for (Marker marker :
                 markers) {

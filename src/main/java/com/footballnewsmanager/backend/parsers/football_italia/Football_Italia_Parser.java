@@ -75,7 +75,11 @@ public class Football_Italia_Parser {
                             String articleLink = footballItaliaSiteUrl + tmpNewsUrl;
                             newsUrls.add(articleLink);
                             newsIds.add(newsId);
-                            docs.add(Jsoup.connect(articleLink).get());
+                            try{
+                                docs.add(Jsoup.connect(articleLink).get());
+                            } catch (IOException e){
+                                e.printStackTrace();
+                            }
                         }
                     }
                 }
@@ -111,8 +115,8 @@ public class Football_Italia_Parser {
                             newsTag.setTag(tag);
                             newsTagRepository.save(newsTag);
                         }
-                        List<Team> teams = teamRepository.findAll();
-                        ParserHelper.connectNewsWithTeams(teams, tagSet, news, teamNewsRepository);
+//                        List<Team> teams = teamRepository.findAll();
+                        ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository, markerRepository);
                     }
                 }
             } catch (IOException e) {

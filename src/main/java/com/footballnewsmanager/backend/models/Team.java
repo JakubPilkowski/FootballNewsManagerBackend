@@ -27,7 +27,7 @@ public class Team {
     @NotBlank
     private String logoUrl;
 
-    @ManyToMany()
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "team_markers",
             joinColumns = @JoinColumn(name = "teams_id"),

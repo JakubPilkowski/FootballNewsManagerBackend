@@ -51,7 +51,11 @@ public class TransferyInfoParser {
                         String articleLink = tranferyInfoMainUrl + tmpNewsUrl;
                         newsUrls.add(articleLink);
                         newsIds.add(newsId);
-                        docs.add(Jsoup.connect(articleLink).get());
+                        try{
+                            docs.add(Jsoup.connect(articleLink).get());
+                        } catch (IOException e){
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
@@ -61,7 +65,7 @@ public class TransferyInfoParser {
                 int index = docs.indexOf(doc);
                 Elements articleElement = doc.getElementsByTag("article");
                 String title = articleElement.get(0).select("h1").text();
-                String imgUrl = articleElement.select("picture").get(0).select("source").get(1).attr("srcset");
+                String imgUrl = tranferyInfoMainUrl+"/"+articleElement.select("picture").get(0).select("source").get(1).attr("srcset");
                 String date = articleElement.select("time").text().split(" ")[0];
                 LocalDate localDate = LocalDate.parse(date);
                 String articleTagSection = doc.getElementsByClass("d-inline").text();
@@ -78,7 +82,6 @@ public class TransferyInfoParser {
                     news.setImageUrl(imgUrl);
                     news.setSite(site.get());
                     news.setDate(localDate);
-//                    news.setTags(tagSet);
                     newsRepository.save(news);
 
                     for (Tag tag :
@@ -89,8 +92,8 @@ public class TransferyInfoParser {
                         newsTagRepository.save(newsTag);
                     }
 
-                    List<Team> teams = teamRepository.findAll();
-                    ParserHelper.connectNewsWithTeams(teams, tagSet, news, teamNewsRepository);
+//                    List<Team> teams = teamRepository.findAll();
+                    ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository, markerRepository);
                 }
             }
         } catch (IOException e) {
