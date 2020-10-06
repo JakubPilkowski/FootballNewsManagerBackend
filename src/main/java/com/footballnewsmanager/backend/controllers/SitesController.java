@@ -13,10 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.time.temporal.WeekFields;
+import java.util.*;
 
 @RestController
 @RequestMapping("/sites")
@@ -38,22 +36,20 @@ public class SitesController {
         Set<SiteWithClicks> siteWithClicksSet = new HashSet<>();
         for (Site site :
                 sites) {
-            Optional<SiteClick> clicks = siteClickRepository.findBySiteAndDate(site, LocalDate.now());
-            Optional<Integer> clicksFromLastWeek = siteClickRepository.sumFromLastWeek(site, LocalDate.now().minusDays(7), LocalDate.now());
-            clicksFromLastWeek.ifPresent(System.out::println);
-
-            if (clicks.isPresent()) {
-                SiteWithClicks siteWithClicks = new SiteWithClicks(site.getId(), site.getName(), site.getLogoUrl(),
-                        site.isHighlighted(), clicks.get().getClicks());
-                siteWithClicksSet.add(siteWithClicks);
+            LocalDate localDate = LocalDate.now();
+            WeekFields weekFields = WeekFields.of(Locale.getDefault());
+            int skipNumber=localDate.get(weekFields.dayOfWeek());
+            List<SiteClick> clicksFromLastWeek = siteClickRepository.findBySiteAndDateBetween(site,localDate.minusDays(6+skipNumber), localDate.minusDays(skipNumber));
+            SiteWithClicks siteWithClicks = new SiteWithClicks(site.getId(), site.getName(), site.getLogoUrl(),
+                    site.isHighlighted(), 0);
+            if(clicksFromLastWeek.size()>0){
+                for (SiteClick siteClick :
+                        clicksFromLastWeek) {
+                    siteWithClicks.setClicks(siteWithClicks.getClicks()+siteClick.getClicks());
+                }
             }
-            else{
-                SiteWithClicks siteWithClicks = new SiteWithClicks(site.getId(), site.getName(), site.getLogoUrl(),
-                        site.isHighlighted(), 0);
-                siteWithClicksSet.add(siteWithClicks);
-            }
+            siteWithClicksSet.add(siteWithClicks);
         }
-
         SitesResponse sitesResponse = new SitesResponse(true, "Strony", siteWithClicksSet);
         return ResponseEntity.ok(sitesResponse);
     }
@@ -81,7 +77,6 @@ public class SitesController {
                 int clicks = siteClick.get().getClicks();
                 siteClick.get().setClicks(clicks + 1);
                 siteClickRepository.save(siteClick.get());
-//                List<SiteClick> siteClicks = siteClickRepository.findBySite(site.get());
             } else {
                 SiteClick createdSiteClick = new SiteClick();
                 createdSiteClick.setSite(site.get());
@@ -89,11 +84,7 @@ public class SitesController {
                 createdSiteClick.setClicks(1);
                 siteClickRepository.save(createdSiteClick);
             }
-//            int clicks = site.get().getClicks();
-//            site.get().setClicks(clicks+1);
-//            site.get().setClicks();
-//            siteRepository.save(site.get());
-            return ResponseEntity.ok(new SiteResponse(true, "Wyróżniono stronę", site.get()));
+            return ResponseEntity.ok(new BaseResponse(true, "Dodano kliknięcie"));
         } else {
             return ResponseEntity.ok(new BaseResponse(false, "Nie ma takiej strony!!!"));
         }

@@ -17,6 +17,26 @@ public class SiteWithClicks {
         this.clicks = clicks;
     }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setLogoUrl(String logoUrl) {
+        this.logoUrl = logoUrl;
+    }
+
+    public void setHighlighted(boolean highlighted) {
+        this.highlighted = highlighted;
+    }
+
+    public void setClicks(int clicks) {
+        this.clicks = clicks;
+    }
+
     public int getId() {
         return id;
     }
