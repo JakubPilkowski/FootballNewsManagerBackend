@@ -16,7 +16,7 @@ public class League {
 
     @Id
     @GeneratedValue()
-    private int id;
+    private Long id;
 
 
     @NotBlank
@@ -40,11 +40,11 @@ public class League {
     @JsonBackReference
     private List<Team> teams = new ArrayList<>();
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

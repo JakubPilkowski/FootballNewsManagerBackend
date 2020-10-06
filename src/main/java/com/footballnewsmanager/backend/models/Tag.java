@@ -2,7 +2,6 @@ package com.footballnewsmanager.backend.models;
 
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -19,7 +18,7 @@ public class Tag {
 
     @Id
     @GeneratedValue()
-    private int id;
+    private Long id;
 
     @NotBlank
     private String name;
@@ -28,14 +27,11 @@ public class Tag {
     @JsonBackReference
     private Set<NewsTag> tags = new HashSet<>();
 
-//    @ManyToMany(mappedBy = "tags")
-//    private Set<News> news;
-
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -54,12 +50,4 @@ public class Tag {
     public void setTags(Set<NewsTag> tags) {
         this.tags = tags;
     }
-
-//    public Set<News> getNews() {
-//        return news;
-//    }
-//
-//    public void setNews(Set<News> news) {
-//        this.news = news;
-//    }
 }

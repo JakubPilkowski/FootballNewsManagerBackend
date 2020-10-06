@@ -65,13 +65,13 @@ public class Football_Italia_Parser {
                 List<String> newsUrls = new ArrayList<>();
                 String footballItaliaSiteUrl = "https://www.football-italia.net";
                 List<Document> docs = new ArrayList<>();
-                List<Integer> newsIds = new ArrayList<>();
+                List<Long> newsIds = new ArrayList<>();
 
                 Optional<Site> site = siteRepository.findByName("Football Italia");
                 if (site.isPresent()) {
                     for (String tmpNewsUrl : tmpNewsUrls) {
-                        int newsId = Integer.parseInt(tmpNewsUrl.split("/")[1]);
-                        if (!newsRepository.existsByNewsSiteIdAndNewsId(site.get().getId(), newsId)) {
+                        Long newsId = Long.parseLong(tmpNewsUrl.split("/")[1]);
+                        if (!newsRepository.existsBySiteIdAndId(site.get().getId(), newsId)) {
                             String articleLink = footballItaliaSiteUrl + tmpNewsUrl;
                             newsUrls.add(articleLink);
                             newsIds.add(newsId);
@@ -97,10 +97,10 @@ public class Football_Italia_Parser {
                     List<Marker> markers = markerRepository.findAll();
                     Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, endContent, tagRepository));
 
-                    if (!newsRepository.existsByNewsSiteIdAndNewsId(newsIds.get(index), site.get().getId())) {
+                    if (!newsRepository.existsBySiteIdAndId(newsIds.get(index), site.get().getId())) {
                         News news = new News();
-                        news.setNewsSiteId(site.get().getId());
-                        news.setNewsId(newsIds.get(index));
+                        news.setSiteId(site.get().getId());
+                        news.setId(newsIds.get(index));
                         news.setTitle(title);
                         news.setNewsUrl(newsUrls.get(index));
                         news.setImageUrl(imgUrl);

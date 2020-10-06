@@ -3,13 +3,13 @@ package com.footballnewsmanager.backend.api.response.sites;
 public class SiteWithClicks {
 
 
-    private int id;
+    private Long id;
     private String name;
     private String logoUrl;
     private boolean highlighted;
     private int clicks;
 
-    public SiteWithClicks(int id, String name, String logoUrl, boolean highlighted, int clicks) {
+    public SiteWithClicks(Long id, String name, String logoUrl, boolean highlighted, int clicks) {
         this.id = id;
         this.name = name;
         this.logoUrl = logoUrl;
@@ -17,7 +17,7 @@ public class SiteWithClicks {
         this.clicks = clicks;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -37,7 +37,7 @@ public class SiteWithClicks {
         this.clicks = clicks;
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 

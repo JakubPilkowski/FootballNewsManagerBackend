@@ -5,16 +5,16 @@ import java.util.Objects;
 
 public class NewsId implements Serializable {
 
-    private int newsSiteId;
-    private int newsId;
+    private Long siteId;
+    private Long id;
 
     public NewsId(){
 
     }
 
-    public NewsId(int newsSiteId, int newsId) {
-        this.newsSiteId = newsSiteId;
-        this.newsId = newsId;
+    public NewsId(Long siteId, Long id) {
+        this.siteId = siteId;
+        this.id = id;
     }
 
     @Override
@@ -22,12 +22,12 @@ public class NewsId implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         NewsId newsId = (NewsId) o;
-        return newsSiteId == newsId.newsSiteId &&
-                this.newsId == newsId.newsId;
+        return siteId.equals(newsId.siteId) &&
+                this.id.equals(newsId.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(newsSiteId, newsId);
+        return Objects.hash(siteId, id);
     }
 }

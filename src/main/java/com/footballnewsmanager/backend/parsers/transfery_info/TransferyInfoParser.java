@@ -41,13 +41,13 @@ public class TransferyInfoParser {
             transferyInfoMainDoc = Jsoup.connect("https://transfery.info/aktualnosci").get();
             List<String> tmpNewsUrls = transferyInfoMainDoc.getElementsByClass("article-links").select("a").eachAttr("href");
             List<String> newsUrls = new ArrayList<>();
-            List<Integer> newsIds = new ArrayList<>();
+            List<Long> newsIds = new ArrayList<>();
             List<Document> docs = new ArrayList<>();
             Optional<Site> site = siteRepository.findByName("Transfery.info");
             if (site.isPresent()) {
                 for (String tmpNewsUrl : tmpNewsUrls) {
-                    int newsId = Integer.parseInt(tmpNewsUrl.split("/")[3]);
-                    if (!newsRepository.existsByNewsSiteIdAndNewsId(site.get().getId(), newsId)) {
+                    Long newsId = Long.parseLong(tmpNewsUrl.split("/")[3]);
+                    if (!newsRepository.existsBySiteIdAndId(site.get().getId(), newsId)) {
                         String articleLink = tranferyInfoMainUrl + tmpNewsUrl;
                         newsUrls.add(articleLink);
                         newsIds.add(newsId);
@@ -73,10 +73,10 @@ public class TransferyInfoParser {
                 List<Marker> markers = markerRepository.findAll();
                 Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, articleTagSection, tagRepository));
 
-                if (!newsRepository.existsByNewsSiteIdAndNewsId(newsIds.get(index), site.get().getId())) {
+                if (!newsRepository.existsBySiteIdAndId(newsIds.get(index), site.get().getId())) {
                     News news = new News();
-                    news.setNewsSiteId(site.get().getId());
-                    news.setNewsId(newsIds.get(index));
+                    news.setSiteId(site.get().getId());
+                    news.setId(newsIds.get(index));
                     news.setTitle(title);
                     news.setNewsUrl(newsUrls.get(index));
                     news.setImageUrl(imgUrl);

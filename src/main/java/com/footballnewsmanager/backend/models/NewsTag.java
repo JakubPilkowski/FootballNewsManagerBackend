@@ -1,7 +1,6 @@
 package com.footballnewsmanager.backend.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import javax.persistence.*;
 
@@ -11,13 +10,13 @@ public class NewsTag {
 
     @Id
     @GeneratedValue()
-    public int id;
+    public Long id;
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

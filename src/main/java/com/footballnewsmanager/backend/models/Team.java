@@ -1,8 +1,6 @@
 package com.footballnewsmanager.backend.models;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -17,7 +15,7 @@ public class Team {
 
     @Id
     @GeneratedValue()
-    private int id;
+    private Long id;
 
     @NotBlank
     @Size(min=4, max = 50)
@@ -42,11 +40,17 @@ public class Team {
     @ManyToOne
     private League league;
 
-    public int getId() {
+
+    @OneToMany(mappedBy = "team")
+    @JsonIgnore
+    private List<FavouriteTeam> userTeams = new ArrayList<>();
+
+
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -74,7 +78,6 @@ public class Team {
         this.league = league;
     }
 
-
     public Set<Marker> getMarkers() {
         return markers;
     }
@@ -89,5 +92,13 @@ public class Team {
 
     public void setTeamNews(List<TeamNews> teamNews) {
         this.teamNews = teamNews;
+    }
+
+    public List<FavouriteTeam> getUserTeams() {
+        return userTeams;
+    }
+
+    public void setUserTeams(List<FavouriteTeam> userTeams) {
+        this.userTeams = userTeams;
     }
 }
