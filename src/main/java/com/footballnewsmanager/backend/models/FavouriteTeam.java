@@ -1,17 +1,22 @@
 package com.footballnewsmanager.backend.models;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
 
+import javax.persistence.*;
 
 @Entity
-public class TeamNews {
+@Table(name = "favourite_teams")
+public class FavouriteTeam {
 
     @Id
     @GeneratedValue()
     private Long id;
+
+    @ManyToOne
+    private Team team;
+
+    @ManyToOne
+    private User user;
+
 
     public Long getId() {
         return id;
@@ -29,18 +34,11 @@ public class TeamNews {
         this.team = team;
     }
 
-    public News getNews() {
-        return news;
+    public User getUser() {
+        return user;
     }
 
-    public void setNews(News news) {
-        this.news = news;
+    public void setUser(User user) {
+        this.user = user;
     }
-
-    @ManyToOne
-    private Team team;
-
-    @ManyToOne
-    private News news;
-
 }

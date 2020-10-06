@@ -1,5 +1,5 @@
 package com.footballnewsmanager.backend.models;
 
-public enum LeagueType {
-    LIGA, REPREZENTACJA
+public enum RoleName {
+    USER, ADMIN
 }

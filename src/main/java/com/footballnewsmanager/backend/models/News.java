@@ -1,9 +1,7 @@
 package com.footballnewsmanager.backend.models;
 
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -19,10 +17,10 @@ import java.util.Set;
 public class News {
 
     @Id
-    private int newsSiteId;
+    private Long siteId;
 
     @Id
-    private int newsId;
+    private Long id;
 
 
     @NotBlank
@@ -39,6 +37,7 @@ public class News {
     private LocalDate date;
 
     @ManyToOne
+    @JoinColumn(name = "site")
     private Site site;
 
     @OneToMany(mappedBy = "news", cascade = CascadeType.ALL,orphanRemoval = true)
@@ -127,20 +126,20 @@ public class News {
         this.imageUrl = imageUrl;
     }
 
-    public int getNewsSiteId() {
-        return newsSiteId;
+    public Long getSiteId() {
+        return siteId;
     }
 
-    public void setNewsSiteId(int site_id) {
-        this.newsSiteId = site_id;
+    public void setSiteId(Long site_id) {
+        this.siteId = site_id;
     }
 
-    public int getNewsId() {
-        return newsId;
+    public Long getId() {
+        return id;
     }
 
-    public void setNewsId(int news_id) {
-        this.newsId = news_id;
+    public void setId(Long news_id) {
+        this.id = news_id;
     }
 
     public Set<NewsTag> getTags() {

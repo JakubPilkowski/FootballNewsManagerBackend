@@ -2,21 +2,19 @@ package com.footballnewsmanager.backend.models;
 
 
 import javax.persistence.*;
-import java.time.LocalDate;
 
 @Entity
-@Table(name = "site_clicks")
-public class SiteClick {
+@Table(name = "user_sites")
+public class UserSite {
 
     @Id
     @GeneratedValue()
     private Long id;
 
-    private int clicks = 0;
+    @ManyToOne
+    private User user;
 
-    private LocalDate date;
-
-    @ManyToOne()
+    @ManyToOne
     private Site site;
 
     public Long getId() {
@@ -27,20 +25,12 @@ public class SiteClick {
         this.id = id;
     }
 
-    public void setClicks(int clicks) {
-        this.clicks = clicks;
+    public User getUser() {
+        return user;
     }
 
-    public void setDate(LocalDate date) {
-        this.date = date;
-    }
-
-    public int getClicks() {
-        return clicks;
-    }
-
-    public LocalDate getDate() {
-        return date;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public Site getSite() {

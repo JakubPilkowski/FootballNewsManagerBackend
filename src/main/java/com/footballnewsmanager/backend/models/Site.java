@@ -1,7 +1,7 @@
 package com.footballnewsmanager.backend.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import net.minidev.json.annotate.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -15,17 +15,17 @@ public class Site {
 
     @Id
     @GeneratedValue()
-    private int id;
+    private Long id;
 
     @NotBlank
-    @Size(min=4, max = 100)
+    @Size(min = 4, max = 100)
     private String name;
 
     @NotBlank
     private String logoUrl;
 
     @NotBlank
-    @Size(min=10, max=150)
+    @Size(min = 10, max = 150)
     private String description;
 
 
@@ -38,16 +38,19 @@ public class Site {
     private List<SiteClick> clicks = new ArrayList<>();
 
 
-    //clicks = siteClicksRepo.findbySiteAndDateBetween
+    @OneToMany(mappedBy = "site")
+    @JsonIgnore
+    private List<UserSite> userSites = new ArrayList<>();
+
 
     private boolean highlighted = false;
 
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -68,9 +71,6 @@ public class Site {
     }
 
 
-
-
-
     public boolean isHighlighted() {
         return highlighted;
     }
@@ -79,7 +79,13 @@ public class Site {
         this.highlighted = highlighted;
     }
 
+    public List<UserSite> getUserSites() {
+        return userSites;
+    }
 
+    public void setUserSites(List<UserSite> userSites) {
+        this.userSites = userSites;
+    }
 
     public String getDescription() {
         return description;

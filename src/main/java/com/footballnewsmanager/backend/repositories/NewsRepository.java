@@ -8,7 +8,7 @@ import java.time.LocalDate;
 public interface NewsRepository extends JpaRepository<News,Integer> {
 
 
-    boolean existsByNewsSiteIdAndNewsId(int newsSiteId, int newsId);
+    boolean existsBySiteIdAndId(Long siteId, Long id);
 
     void deleteByDateLessThan(LocalDate localDate);
 
