@@ -33,8 +33,12 @@ public class Site {
     @JsonBackReference
     private List<News> news = new ArrayList<>();
 
+    @OneToMany(mappedBy = "site")
+    @JsonBackReference
+    private List<SiteClick> clicks = new ArrayList<>();
 
-    private int clicks = 0;
+
+    //clicks = siteClicksRepo.findbySiteAndDateBetween
 
     private boolean highlighted = false;
 
@@ -65,13 +69,7 @@ public class Site {
 
 
 
-    public int getClicks() {
-        return clicks;
-    }
 
-    public void setClicks(int clicks) {
-        this.clicks = clicks;
-    }
 
     public boolean isHighlighted() {
         return highlighted;
@@ -97,5 +95,13 @@ public class Site {
 
     public void setNews(List<News> aNews) {
         this.news = aNews;
+    }
+
+    public List<SiteClick> getClicks() {
+        return clicks;
+    }
+
+    public void setClicks(List<SiteClick> clicks) {
+        this.clicks = clicks;
     }
 }

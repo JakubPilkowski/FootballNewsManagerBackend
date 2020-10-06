@@ -14,12 +14,12 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/leagues")
-public class LeagueController {
+public class LeaguesController {
 
 
     private final LeagueRepository leagueRepository;
 
-    public LeagueController(LeagueRepository leagueRepository) {
+    public LeaguesController(LeagueRepository leagueRepository) {
         this.leagueRepository = leagueRepository;
     }
 

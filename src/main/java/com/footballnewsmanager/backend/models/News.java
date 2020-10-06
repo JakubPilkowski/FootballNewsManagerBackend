@@ -44,13 +44,6 @@ public class News {
     @OneToMany(mappedBy = "news", cascade = CascadeType.ALL,orphanRemoval = true)
     private Set<NewsTag> tags = new HashSet<>();
 
-//    @ManyToMany(cascade = CascadeType.ALL)
-//    @JoinTable(
-//            name = "news_tags",
-//            joinColumns =  { @JoinColumn( name = "news_site_id"), @JoinColumn(name="news_id") },
-//            inverseJoinColumns = @JoinColumn(name = "tags_id"))
-//    private Set<Tag> tags;
-
 
     public List<TeamNews> getTeamNews() {
         return teamNews;
@@ -61,7 +54,6 @@ public class News {
     }
 
     @OneToMany(mappedBy = "news", cascade = CascadeType.ALL,orphanRemoval = true)
-//    @JsonManagedReference
     @JsonIgnore()
     private List<TeamNews> teamNews = new ArrayList<>();
 
@@ -70,16 +62,6 @@ public class News {
 
     private boolean highlighted= false;
 
-
-
-//
-//    public int getId() {
-//        return id;
-//    }
-//
-//    public void setId(int id) {
-//        this.id = id;
-//    }
 
     public String getTitle() {
         return title;
