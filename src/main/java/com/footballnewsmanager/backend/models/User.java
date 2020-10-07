@@ -1,7 +1,6 @@
 package com.footballnewsmanager.backend.models;
 
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.NaturalId;
 
 import javax.persistence.*;
@@ -40,7 +39,7 @@ public class User {
     private String email;
 
     @NotBlank
-    @Size(max = 25)
+    @Size(max = 60)
     private String password;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -64,7 +63,7 @@ public class User {
 
     private boolean notification = true;
 
-    private boolean proposedSites = true;
+    private boolean proposedNews = true;
 
     public User() {
 
@@ -149,11 +148,19 @@ public class User {
         this.notification = notification;
     }
 
-    public boolean isProposedSites() {
-        return proposedSites;
+    public boolean isProposedNews() {
+        return proposedNews;
     }
 
-    public void setProposedSites(boolean proposedSites) {
-        this.proposedSites = proposedSites;
+    public void setProposedNews(boolean proposedSites) {
+        this.proposedNews = proposedSites;
+    }
+
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
     }
 }
