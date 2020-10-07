@@ -15,12 +15,14 @@ import com.footballnewsmanager.backend.models.User;
 import com.footballnewsmanager.backend.repositories.BlacklistTokenRepository;
 import com.footballnewsmanager.backend.repositories.RoleRepository;
 import com.footballnewsmanager.backend.repositories.UserRepository;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -60,7 +62,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest){
+    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getUsernameOrEmail(),
@@ -75,21 +77,21 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest){
-        if(userRepository.existsByUsernameOrEmail(registerRequest.getUsername(), registerRequest.getEmail())){
+    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
+        if (userRepository.existsByUsernameOrEmail(registerRequest.getUsername(), registerRequest.getEmail())) {
             List<UserError> errors = new ArrayList<>();
-            if(userRepository.existsByUsername(registerRequest.getUsername())){
+            if (userRepository.existsByUsername(registerRequest.getUsername())) {
                 UserError usernameError = new UserError("Podana nazwa użytkownika już istnieje", "username");
                 errors.add(usernameError);
             }
-            if(userRepository.existsByEmail(registerRequest.getEmail())){
+            if (userRepository.existsByEmail(registerRequest.getEmail())) {
                 UserError usernameError = new UserError("Na podany adres email jest już założone konto", "email");
                 errors.add(usernameError);
             }
             return ResponseEntity.badRequest().body(new BadCredentialsResponse(false, "Błąd", errors));
         }
 
-        User user = new User(registerRequest.getUsername(),registerRequest.getEmail(), registerRequest.getPassword());
+        User user = new User(registerRequest.getUsername(), registerRequest.getEmail(), registerRequest.getPassword());
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
@@ -110,13 +112,6 @@ public class AuthController {
 
         return ResponseEntity.created(location).body(new BaseResponse(true, "Pomyślnie zarejestrowano"));
 
-    }
-
-//    @PreAuthorize("hasRole('USER')")
-    @DeleteMapping("/deleteUser/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable("id") long id) {
-        userRepository.deleteById(id);
-        return ResponseEntity.ok(new BaseResponse(true, "Usunięto pomyślnie użytkownika"));
     }
 
     @PutMapping("/logout")
