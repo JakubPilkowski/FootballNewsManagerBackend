@@ -1,6 +1,9 @@
 package com.footballnewsmanager.backend.models;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.views.Views;
 import org.hibernate.annotations.NaturalId;
 
 import javax.persistence.*;
@@ -21,6 +24,7 @@ import java.util.Set;
                 "email"
         })}
 )
+@JsonView(Views.Public.class)
 public class User {
 
     @Id
@@ -36,19 +40,28 @@ public class User {
     @NotBlank
     @Size(max = 40)
     @Email
+    @JsonIgnore
     private String email;
 
     @NotBlank
     @Size(max = 60)
+    @JsonIgnore
     private String password;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<FavouriteTeam> favourtiteTeams = new ArrayList<>();
+    private List<FavouriteTeam> favouriteTeams = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserSite> userSites = new ArrayList<>();
 
+
+    //w momencie dodawania storage
+//    @NotBlank
+//    private String imageUrl;
+
+
     @ManyToMany(fetch = FetchType.LAZY)
+    @JsonView(Views.Internal.class)
     @JoinTable(name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
@@ -108,12 +121,12 @@ public class User {
         this.password = password;
     }
 
-    public List<FavouriteTeam> getFavourtiteTeams() {
-        return favourtiteTeams;
+    public List<FavouriteTeam> getFavouriteTeams() {
+        return favouriteTeams;
     }
 
-    public void setFavourtiteTeams(List<FavouriteTeam> favourtiteTeams) {
-        this.favourtiteTeams = favourtiteTeams;
+    public void setFavouriteTeams(List<FavouriteTeam> favourtiteTeams) {
+        this.favouriteTeams = favourtiteTeams;
     }
 
     public List<UserSite> getUserSites() {
@@ -161,6 +174,7 @@ public class User {
     }
 
     public void setRoles(Set<Role> roles) {
+        this.roles.clear();
         this.roles = roles;
     }
 }

@@ -1,26 +1,19 @@
 package com.footballnewsmanager.backend.controllers;
 
 
-import com.footballnewsmanager.backend.api.api_sports.ApiSportCountriesResponse;
-import com.footballnewsmanager.backend.api.api_sports.ApiSportTeamsResponse;
-import com.footballnewsmanager.backend.api.api_sports.CountryResponse;
-import com.footballnewsmanager.backend.api.api_sports.TeamResponse;
-import com.footballnewsmanager.backend.api.google_translate.TranslateRequest;
-import com.footballnewsmanager.backend.api.google_translate.TranslateResponse;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.response.BaseResponse;
 import com.footballnewsmanager.backend.api.response.TeamsResponse;
 import com.footballnewsmanager.backend.helpers.LeaguesHelper;
-import com.footballnewsmanager.backend.models.League;
 import com.footballnewsmanager.backend.models.Team;
-import com.footballnewsmanager.backend.models.Marker;
 import com.footballnewsmanager.backend.repositories.LeagueRepository;
 import com.footballnewsmanager.backend.repositories.TeamRepository;
 import com.footballnewsmanager.backend.repositories.MarkerRepository;
+import com.footballnewsmanager.backend.views.Views;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.*;
 
@@ -42,8 +35,10 @@ public class TeamsController {
     }
 
     @GetMapping("")
+    @JsonView(Views.Internal.class)
     public ResponseEntity<TeamsResponse> teams() {
-        TeamsResponse teamsResponse = new TeamsResponse(true, "Drużyny", teamRepository.findAll());
+        List<Team> teams = teamRepository.findAll();
+        TeamsResponse teamsResponse = new TeamsResponse(true, "Drużyny", teams);
         return ResponseEntity.ok().body(teamsResponse);
     }
 

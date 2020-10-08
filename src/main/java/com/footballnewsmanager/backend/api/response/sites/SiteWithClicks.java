@@ -6,13 +6,15 @@ public class SiteWithClicks {
     private Long id;
     private String name;
     private String logoUrl;
+    private String description;
     private boolean highlighted;
     private int clicks;
 
-    public SiteWithClicks(Long id, String name, String logoUrl, boolean highlighted, int clicks) {
+    public SiteWithClicks(Long id, String name, String logoUrl, String description, boolean highlighted, int clicks) {
         this.id = id;
         this.name = name;
         this.logoUrl = logoUrl;
+        this.description = description;
         this.highlighted = highlighted;
         this.clicks = clicks;
     }
@@ -35,6 +37,14 @@ public class SiteWithClicks {
 
     public void setClicks(int clicks) {
         this.clicks = clicks;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Long getId() {

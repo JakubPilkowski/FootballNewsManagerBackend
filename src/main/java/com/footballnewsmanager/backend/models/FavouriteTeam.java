@@ -1,10 +1,15 @@
 package com.footballnewsmanager.backend.models;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.views.Views;
+
 import javax.persistence.*;
 
 @Entity
 @Table(name = "favourite_teams")
+@JsonView(Views.Public.class)
 public class FavouriteTeam {
 
     @Id
@@ -15,6 +20,7 @@ public class FavouriteTeam {
     private Team team;
 
     @ManyToOne
+    @JsonBackReference()
     private User user;
 
 

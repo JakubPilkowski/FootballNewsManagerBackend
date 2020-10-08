@@ -1,10 +1,15 @@
 package com.footballnewsmanager.backend.models;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.views.Views;
+
 import javax.persistence.*;
 
 @Entity
 @Table(name = "user_sites")
+@JsonView(Views.Public.class)
 public class UserSite {
 
     @Id
@@ -12,6 +17,7 @@ public class UserSite {
     private Long id;
 
     @ManyToOne
+    @JsonIgnore
     private User user;
 
     @ManyToOne
