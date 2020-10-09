@@ -8,6 +8,7 @@ import com.footballnewsmanager.backend.api.response.auth.BadCredentialsResponse;
 import com.footballnewsmanager.backend.api.response.auth.JwtTokenResponse;
 import com.footballnewsmanager.backend.api.response.auth.UserError;
 import com.footballnewsmanager.backend.auth.JwtTokenProvider;
+import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.models.BlackListToken;
 import com.footballnewsmanager.backend.models.Role;
 import com.footballnewsmanager.backend.models.RoleName;
@@ -130,5 +131,24 @@ public class AuthController {
             return ResponseEntity.ok(new BaseResponse(false, "Nie jesteś zalogowany"));
     }
 
+//    @PostMapping("resetPassword/{email}")
+//    public ResponseEntity<BaseResponse> resetPassword(@PathVariable("email") String email){
+//
+//        Optional<User> userOptional = userRepository.findByEmail(email);
+//        if(userOptional.isPresent()){
+//            User user = userOptional.get();
+//            Authentication authentication = authenticationManager.authenticate(
+//                    new UsernamePasswordAuthenticationToken(
+//                            user.getUsername(),
+//                            user.getPassword()
+//                    )
+//            );
+//            SecurityContextHolder.getContext().setAuthentication(authentication);
+//
+//
+//        }else{
+//            throw new ResourceNotFoundException("Nie znaleziono konta na podany adres mailowy!");
+//        }
+//    }
 
 }

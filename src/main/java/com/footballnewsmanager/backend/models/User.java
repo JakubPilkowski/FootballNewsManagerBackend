@@ -36,11 +36,11 @@ public class User {
     @Size(max = 20)
     private String username;
 
-    @NaturalId
+    @NaturalId(mutable = true)
     @NotBlank
     @Size(max = 40)
     @Email
-    @JsonIgnore
+//    @JsonIgnore
     private String email;
 
     @NotBlank
@@ -174,7 +174,14 @@ public class User {
     }
 
     public void setRoles(Set<Role> roles) {
-        this.roles.clear();
         this.roles = roles;
+    }
+
+    public void addToRoles(Role role){
+        this.roles.add(role);
+    }
+
+    public void removeFromRoles(Role role){
+        this.roles.remove(role);
     }
 }
