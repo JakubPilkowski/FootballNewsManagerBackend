@@ -41,7 +41,7 @@ public class SitesController {
             int skipNumber=localDate.get(weekFields.dayOfWeek());
             List<SiteClick> clicksFromLastWeek = siteClickRepository.findBySiteAndDateBetween(site,localDate.minusDays(6+skipNumber), localDate.minusDays(skipNumber));
             SiteWithClicks siteWithClicks = new SiteWithClicks(site.getId(), site.getName(), site.getLogoUrl(),
-                    site.isHighlighted(), 0);
+                    site.getDescription(), site.isHighlighted(), 0);
             if(clicksFromLastWeek.size()>0){
                 for (SiteClick siteClick :
                         clicksFromLastWeek) {

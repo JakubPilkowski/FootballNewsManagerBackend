@@ -1,6 +1,8 @@
 package com.footballnewsmanager.backend.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -12,6 +14,7 @@ import java.util.Set;
                 "name"
         })
 })
+@JsonView(Views.Public.class)
 public class Marker {
     @Id
     @GeneratedValue()

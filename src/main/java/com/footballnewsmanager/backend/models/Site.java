@@ -1,7 +1,8 @@
 package com.footballnewsmanager.backend.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "sites")
+@JsonView(Views.Public.class)
 public class Site {
 
     @Id
@@ -30,19 +32,19 @@ public class Site {
 
 
     @OneToMany(mappedBy = "site", fetch = FetchType.LAZY)
-    @JsonBackReference
+    @JsonBackReference(value = "news")
     private List<News> news = new ArrayList<>();
 
     @OneToMany(mappedBy = "site")
-    @JsonBackReference
+    @JsonBackReference(value = "clicks")
     private List<SiteClick> clicks = new ArrayList<>();
 
 
     @OneToMany(mappedBy = "site")
-    @JsonIgnore
+    @JsonBackReference(value = "userSites")
     private List<UserSite> userSites = new ArrayList<>();
 
-
+    @JsonView(Views.Internal.class)
     private boolean highlighted = false;
 
 

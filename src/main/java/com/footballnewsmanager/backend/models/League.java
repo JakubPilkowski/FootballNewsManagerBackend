@@ -3,6 +3,8 @@ package com.footballnewsmanager.backend.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -11,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@JsonView(Views.Public.class)
 @Table(name = "leagues")
 public class League {
 

@@ -1,8 +1,8 @@
-package com.footballnewsmanager.backend.api.request.register;
+package com.footballnewsmanager.backend.api.request.user_settings;
 
 import com.footballnewsmanager.backend.models.Language;
-import com.footballnewsmanager.backend.models.News;
 import com.footballnewsmanager.backend.models.Site;
+import com.footballnewsmanager.backend.models.Team;
 
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -11,7 +11,13 @@ import java.util.List;
 
 public class UserSettingsRequest {
 
-    @Enumerated(EnumType.STRING)
+    @NotBlank
+    private List<Team> favouriteTeams;
+
+    @NotBlank
+    private List<Site> chosenSites;
+
+//    @Enumerated(EnumType.STRING)
     @NotBlank
     private Language language;
 
@@ -23,12 +29,6 @@ public class UserSettingsRequest {
 
     @NotBlank
     boolean proposedNews;
-
-    @NotBlank
-    private List<News> favouriteTeams;
-
-    @NotBlank
-    private List<Site> chosenSites;
 
     public Language getLanguage() {
         return language;
@@ -62,11 +62,11 @@ public class UserSettingsRequest {
         this.proposedNews = proposedNews;
     }
 
-    public List<News> getFavouriteTeams() {
+    public @NotBlank List<Team> getFavouriteTeams() {
         return favouriteTeams;
     }
 
-    public void setFavouriteTeams(List<News> favouriteTeams) {
+    public void setFavouriteTeams(@NotBlank List<Team> favouriteTeams) {
         this.favouriteTeams = favouriteTeams;
     }
 

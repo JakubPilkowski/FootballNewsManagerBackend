@@ -1,6 +1,8 @@
 package com.footballnewsmanager.backend.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -11,6 +13,8 @@ import java.util.Set;
 
 @Entity
 @Table(name = "teams")
+//@JsonFilter("teamFilter")
+@JsonView(Views.Public.class)
 public class Team {
 
     @Id
@@ -30,6 +34,7 @@ public class Team {
             name = "team_markers",
             joinColumns = @JoinColumn(name = "teams_id"),
             inverseJoinColumns = @JoinColumn(name = "markers_id"))
+    @JsonView(Views.Internal.class)
     private Set<Marker> markers;
 
 
@@ -38,6 +43,7 @@ public class Team {
     private List<TeamNews> teamNews= new ArrayList<>();
 
     @ManyToOne
+    @JsonView(Views.Internal.class)
     private League league;
 
 

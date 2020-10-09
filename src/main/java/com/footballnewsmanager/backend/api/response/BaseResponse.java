@@ -2,6 +2,7 @@ package com.footballnewsmanager.backend.api.response;
 
 public class BaseResponse {
 
+
     private boolean success;
     private String message;
 
