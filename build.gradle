@@ -23,6 +23,7 @@ dependencies {
     implementation ('org.postgresql:postgresql')
     implementation group: 'org.jsoup', name: 'jsoup', version: '1.13.1'
     implementation group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-mail', version: '2.3.3.RELEASE'
 
 
     testImplementation('org.springframework.boot:spring-boot-starter-test') {

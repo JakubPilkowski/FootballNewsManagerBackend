@@ -1,4 +1,4 @@
-package com.footballnewsmanager.backend.api.request.register;
+package com.footballnewsmanager.backend.api.request.auth;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;

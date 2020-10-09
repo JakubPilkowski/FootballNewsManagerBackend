@@ -8,6 +8,8 @@ import com.footballnewsmanager.backend.auth.JwtTokenProvider;
 import com.footballnewsmanager.backend.repositories.BlacklistTokenRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -49,6 +51,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         this.jwtTokenProvider = jwtTokenProvider;
         this.blacklistTokenRepository = blacklistTokenRepository;
     }
+
+//    @Bean
+//    public JavaMailSender mailSender(){
+//        return new JavaMailSenderImpl();
+//    }
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(){
