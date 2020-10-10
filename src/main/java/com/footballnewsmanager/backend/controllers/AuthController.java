@@ -9,6 +9,8 @@ import com.footballnewsmanager.backend.api.response.auth.BadCredentialsResponse;
 import com.footballnewsmanager.backend.api.response.auth.JwtTokenResponse;
 import com.footballnewsmanager.backend.api.response.auth.UserError;
 import com.footballnewsmanager.backend.auth.JwtTokenProvider;
+import com.footballnewsmanager.backend.exceptions.ArgumentNotValidException;
+import com.footballnewsmanager.backend.exceptions.BadRequestException;
 import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.helpers.MailSender;
 import com.footballnewsmanager.backend.models.*;
@@ -16,26 +18,31 @@ import com.footballnewsmanager.backend.repositories.BlacklistTokenRepository;
 import com.footballnewsmanager.backend.repositories.PasswordResetTokenRepository;
 import com.footballnewsmanager.backend.repositories.RoleRepository;
 import com.footballnewsmanager.backend.repositories.UserRepository;
-import org.springframework.context.annotation.Bean;
+import com.footballnewsmanager.backend.services.ResetPasswordService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import javax.mail.internet.MimeMessage;
+import javax.transaction.Transactional;
 import javax.validation.Valid;
 import java.net.URI;
 import java.util.*;
 
 @RestController
 @RequestMapping("/auth")
-public class AuthController {
+@Validated
+public class AuthController extends ArgumentNotValidException {
 
 
     private final JavaMailSender javaMailSender;
@@ -45,12 +52,13 @@ public class AuthController {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
+    private final ResetPasswordService resetPasswordService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
 
 
     public AuthController(JavaMailSender javaMailSender, AuthenticationManager authenticationManager, BlacklistTokenRepository blacklistTokenRepository,
                           UserRepository userRepository, RoleRepository roleRepository,
-                          PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider, PasswordResetTokenRepository passwordResetTokenRepository) {
+                          PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider, ResetPasswordService resetPasswordService, PasswordResetTokenRepository passwordResetTokenRepository) {
         this.javaMailSender = javaMailSender;
         this.authenticationManager = authenticationManager;
         this.blacklistTokenRepository = blacklistTokenRepository;
@@ -58,11 +66,12 @@ public class AuthController {
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
+        this.resetPasswordService = resetPasswordService;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) throws Exception{
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getUsernameOrEmail(),
@@ -130,29 +139,53 @@ public class AuthController {
             return ResponseEntity.ok(new BaseResponse(false, "Nie jesteś zalogowany"));
     }
 
-    @PostMapping("resetPasswordSendTokenToMail/{email}")
+    @PostMapping("sendResetPassToken/{email}")
     public ResponseEntity<BaseResponse> resetPasswordSendTokenToMail(@PathVariable("email") String email){
         Optional<User> userOptional = userRepository.findByEmail(email);
         if(userOptional.isPresent()){
             User user = userOptional.get();
-            String token = UUID.randomUUID().toString();
-            PasswordResetToken passwordResetToken = new PasswordResetToken();
-            passwordResetToken.setToken(token);
-            passwordResetToken.setUser(user);
-            passwordResetTokenRepository.save(passwordResetToken);
-            String text = "Wygenerowany token: \n" + token + "\n Token jest ważny przez 24 godziny. \n Wiadomość wygenerowana. Prosimy na nią nie odpowiadać";
-            SimpleMailMessage mailMessage= MailSender.createMail("Reset hasła", text, email);
-            javaMailSender.send(mailMessage);
-            return ResponseEntity.ok(new BaseResponse(true, "wysłano mail z tokenem aktywacyjnym"));
+            if(!passwordResetTokenRepository.existsByUserAndExpiryDateGreaterThan(userOptional.get(), Calendar.getInstance().getTime())){
+                String token = UUID.randomUUID().toString();
+                PasswordResetToken passwordResetToken = new PasswordResetToken();
+                passwordResetToken.setToken(token);
+                passwordResetToken.setUser(user);
+                Calendar calendar = Calendar.getInstance();
+                calendar.add(Calendar.DATE, 1);
+                passwordResetToken.setExpiryDate(calendar.getTime());
+                passwordResetTokenRepository.save(passwordResetToken);
+                MimeMessage mailMessage= MailSender.createResetPassMail("Reset hasła",token, email, javaMailSender);
+                javaMailSender.send(mailMessage);
+                return ResponseEntity.ok(new BaseResponse(true, "wysłano mail z tokenem aktywacyjnym"));
+            }
+            else{
+                throw new BadRequestException("token został już wygenerowany");
+            }
         }else{
             throw new ResourceNotFoundException("Nie znaleziono konta na podany adres mailowy!");
         }
     }
 
     @PostMapping("resetPassword")
+    @Transactional
     public ResponseEntity<BaseResponse> resetPassword(@RequestBody ResetPasswordRequest resetPasswordRequest)
     {
-
+        String result = resetPasswordService.validateToken(resetPasswordRequest.getToken(), passwordResetTokenRepository);
+        if(result.equals("Ok")){
+            Optional<PasswordResetToken> passwordResetToken = passwordResetTokenRepository.findByToken(resetPasswordRequest.getToken());
+            if(passwordResetToken.isPresent()){
+                User user = passwordResetToken.get().getUser();
+                String pass = resetPasswordRequest.getPassword();
+                user.setPassword(passwordEncoder.encode(pass));
+                userRepository.save(user);
+                passwordResetTokenRepository.delete(passwordResetToken.get());
+            }
+        }
+        else{
+            throw new BadRequestException(result);
+        }
         return ResponseEntity.ok(new BaseResponse(true, "Zaktualizowano hasło"));
     }
+
+
+
 }

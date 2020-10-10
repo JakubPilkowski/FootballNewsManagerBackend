@@ -3,10 +3,11 @@ package com.footballnewsmanager.backend.api.request.auth;
 import javax.validation.constraints.NotBlank;
 
 public class LoginRequest {
-    @NotBlank
+
+    @NotBlank(message = "Wymagany adres mailowy")
     private String usernameOrEmail;
 
-    @NotBlank
+    @NotBlank(message = "Wymagane hasło")
     private String password;
 
     public String getUsernameOrEmail() {

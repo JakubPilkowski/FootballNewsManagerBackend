@@ -15,7 +15,7 @@ public class PasswordResetToken {
 
     private String token;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne()
     private User user;
 
     private Date expiryDate;
