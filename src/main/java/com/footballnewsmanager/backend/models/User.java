@@ -32,18 +32,18 @@ public class User {
     private Long id;
 
 
-    @NotBlank
+    @NotBlank(message = "Login jest wymagany")
     @Size(max = 20)
     private String username;
 
     @NaturalId(mutable = true)
-    @NotBlank
+    @NotBlank(message = "Adres mailowy jest wymagany")
     @Size(max = 40)
     @Email
 //    @JsonIgnore
     private String email;
 
-    @NotBlank
+    @NotBlank(message = "Hasło jest wymagane")
     @Size(max = 60)
     @JsonIgnore
     private String password;
@@ -67,11 +67,9 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
-    @NotBlank
     private boolean darkMode = true;
 
     @Enumerated(EnumType.STRING)
-    @NotBlank
     private Language language = Language.POLSKI;
 
     private boolean notification = true;
