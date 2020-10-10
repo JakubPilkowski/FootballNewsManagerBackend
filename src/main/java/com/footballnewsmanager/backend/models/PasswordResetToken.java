@@ -1,6 +1,9 @@
 package com.footballnewsmanager.backend.models;
 
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
+
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
 import java.util.Date;
 
 @Entity
@@ -13,13 +16,14 @@ public class PasswordResetToken {
     @GeneratedValue()
     private Long id;
 
+    @NotBlank(message = ValidationMessage.TOKEN_NOT_BLANK)
     private String token;
 
     @OneToOne()
     private User user;
 
+    @NotBlank(message = ValidationMessage.DATE_NOT_BLANK)
     private Date expiryDate;
-
 
     public Long getId() {
         return id;

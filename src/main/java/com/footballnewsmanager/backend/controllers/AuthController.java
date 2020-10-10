@@ -5,9 +5,8 @@ import com.footballnewsmanager.backend.api.request.auth.LoginRequest;
 import com.footballnewsmanager.backend.api.request.auth.RegisterRequest;
 import com.footballnewsmanager.backend.api.request.auth.ResetPasswordRequest;
 import com.footballnewsmanager.backend.api.response.BaseResponse;
-import com.footballnewsmanager.backend.api.response.auth.BadCredentialsResponse;
+import com.footballnewsmanager.backend.api.response.auth.ArgumentNotValidResponse;
 import com.footballnewsmanager.backend.api.response.auth.JwtTokenResponse;
-import com.footballnewsmanager.backend.api.response.auth.UserError;
 import com.footballnewsmanager.backend.auth.JwtTokenProvider;
 import com.footballnewsmanager.backend.exceptions.ArgumentNotValidException;
 import com.footballnewsmanager.backend.exceptions.BadRequestException;
@@ -27,9 +26,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.validation.FieldError;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -37,11 +33,11 @@ import javax.mail.internet.MimeMessage;
 import javax.transaction.Transactional;
 import javax.validation.Valid;
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
 @RequestMapping("/auth")
-@Validated
 public class AuthController extends ArgumentNotValidException {
 
 
@@ -88,16 +84,15 @@ public class AuthController extends ArgumentNotValidException {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
         if (userRepository.existsByUsernameOrEmail(registerRequest.getUsername(), registerRequest.getEmail())) {
-            List<UserError> errors = new ArrayList<>();
+            Map<String, String> errors = new HashMap<>();
             if (userRepository.existsByUsername(registerRequest.getUsername())) {
-                UserError usernameError = new UserError("Podana nazwa użytkownika już istnieje", "username");
-                errors.add(usernameError);
+                errors.put("username" , "Podana nazwa użytkownika już istnieje");
             }
             if (userRepository.existsByEmail(registerRequest.getEmail())) {
-                UserError usernameError = new UserError("Na podany adres email jest już założone konto", "email");
-                errors.add(usernameError);
+                errors.put("email" , "Na podany adres email jest już założone konto");
             }
-            return ResponseEntity.badRequest().body(new BadCredentialsResponse(false, "Błąd", errors));
+            return ResponseEntity.badRequest().body(new ArgumentNotValidResponse(LocalDateTime.now(),
+                    HttpStatus.BAD_REQUEST.value(), "Bad Credentials Error", errors));
         }
 
         User user = new User(registerRequest.getUsername(), registerRequest.getEmail(), registerRequest.getPassword());

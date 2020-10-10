@@ -1,7 +1,10 @@
 package com.footballnewsmanager.backend.models;
 
 
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
+
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
 import java.time.LocalDate;
 
 @Entity
@@ -12,8 +15,10 @@ public class SiteClick {
     @GeneratedValue()
     private Long id;
 
+    @NotBlank(message = ValidationMessage.CLICKS_NOT_BLANK)
     private int clicks = 0;
 
+    @NotBlank(message = ValidationMessage.DATE_NOT_BLANK)
     private LocalDate date;
 
     @ManyToOne()

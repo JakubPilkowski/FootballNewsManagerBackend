@@ -1,5 +1,6 @@
 package com.footballnewsmanager.backend.api.request.user_settings;
 
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 import com.footballnewsmanager.backend.models.Language;
 import com.footballnewsmanager.backend.models.Site;
 import com.footballnewsmanager.backend.models.Team;
@@ -11,23 +12,21 @@ import java.util.List;
 
 public class UserSettingsRequest {
 
-    @NotBlank
     private List<Team> favouriteTeams;
 
-    @NotBlank
     private List<Site> chosenSites;
 
 //    @Enumerated(EnumType.STRING)
-    @NotBlank
+    @NotBlank(message = ValidationMessage.LANGUAGE_NOT_BLANK)
     private Language language;
 
-    @NotBlank
+    @NotBlank(message = ValidationMessage.NOTIFICATION_NOT_BLANK)
     boolean notifications;
 
-    @NotBlank
+    @NotBlank(message = ValidationMessage.DARK_MODE_NOT_BLANK)
     boolean darkMode;
 
-    @NotBlank
+    @NotBlank(message = ValidationMessage.PROPOSED_NEWS_NOT_BLANK)
     boolean proposedNews;
 
     public Language getLanguage() {

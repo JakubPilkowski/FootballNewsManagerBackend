@@ -4,6 +4,7 @@ package com.footballnewsmanager.backend.models;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.*;
@@ -22,21 +23,19 @@ public class League {
     private Long id;
 
 
-    @NotBlank
+    @NotBlank(message = ValidationMessage.API_SPORT_ID_NOT_BLANK)
     @JsonIgnore
     private int apisportid;
 
-    @NotBlank
-    @Size(min = 5)
-    @Size(max = 50)
+    @NotBlank(message = ValidationMessage.LEAGUE_NAME_NOT_BLANK)
+    @Size(min = 5, max = 50, message = ValidationMessage.LEAGUE_NAME_SIZE)
     private String name;
 
-    @NotBlank
+    @NotBlank(message = ValidationMessage.LOGO_NOT_BLANK)
     private String logoUrl;
 
-
     @Enumerated(EnumType.STRING)
-    @NotBlank
+    @NotBlank(message = ValidationMessage.LEAGUE_TYPE_NOT_BLANK)
     private LeagueType type;
 
     @OneToMany(mappedBy = "league")

@@ -2,6 +2,7 @@ package com.footballnewsmanager.backend.models;
 
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -20,7 +21,7 @@ public class Tag {
     @GeneratedValue()
     private Long id;
 
-    @NotBlank
+    @NotBlank(message = ValidationMessage.TAG_NAME_NOT_BLANK)
     private String name;
 
     @OneToMany(mappedBy = "tag", cascade = CascadeType.ALL,orphanRemoval = true)

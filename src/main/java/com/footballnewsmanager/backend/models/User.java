@@ -3,6 +3,7 @@ package com.footballnewsmanager.backend.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 import com.footballnewsmanager.backend.views.Views;
 import org.hibernate.annotations.NaturalId;
 
@@ -32,18 +33,18 @@ public class User {
     private Long id;
 
 
-    @NotBlank(message = "Login jest wymagany")
-    @Size(max = 20)
+    @NotBlank(message = ValidationMessage.USERNAME_NOT_BLANK)
+    @Size(min=4, max = 20, message = ValidationMessage.USERNAME_SIZE)
     private String username;
 
     @NaturalId(mutable = true)
-    @NotBlank(message = "Adres mailowy jest wymagany")
-    @Size(max = 40)
-    @Email
-//    @JsonIgnore
+    @NotBlank(message = ValidationMessage.EMAIL_NOT_BLANK)
+    @Size(max = 40, message = ValidationMessage.EMAIL_SIZE)
+    @Email(message = ValidationMessage.EMAIL_VALID)
+    @JsonIgnore
     private String email;
 
-    @NotBlank(message = "Hasło jest wymagane")
+    @NotBlank(message = ValidationMessage.PASSWORD_SIZE)
     @Size(max = 60)
     @JsonIgnore
     private String password;
@@ -53,11 +54,6 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserSite> userSites = new ArrayList<>();
-
-
-    //w momencie dodawania storage
-//    @NotBlank
-//    private String imageUrl;
 
 
     @ManyToMany(fetch = FetchType.LAZY)
@@ -85,6 +81,13 @@ public class User {
         this.username = username;
         this.email = email;
         this.password = password;
+    }
+
+    public void setDefaultUserSettings(){
+        setDarkMode(true);
+        setNotification(true);
+        setLanguage(Language.POLSKI);
+        setProposedNews(true);
     }
 
     public Long getId() {

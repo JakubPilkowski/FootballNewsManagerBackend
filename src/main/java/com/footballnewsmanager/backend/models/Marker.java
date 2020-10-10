@@ -2,6 +2,7 @@ package com.footballnewsmanager.backend.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.*;
@@ -20,7 +21,7 @@ public class Marker {
     @GeneratedValue()
     private Long id;
 
-    @NotBlank
+    @NotBlank(message = ValidationMessage.MARKER_NAME_NOT_BLANK)
     private String name;
 
     @ManyToMany(mappedBy = "markers", fetch = FetchType.EAGER)

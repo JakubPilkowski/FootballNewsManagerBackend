@@ -1,5 +1,7 @@
 package com.footballnewsmanager.backend.start_up;
 
+import com.footballnewsmanager.backend.api.response.auth.ArgumentNotValidResponse;
+import com.footballnewsmanager.backend.exceptions.ArgumentNotValidException;
 import com.footballnewsmanager.backend.models.Role;
 import com.footballnewsmanager.backend.models.RoleName;
 import com.footballnewsmanager.backend.models.User;
@@ -7,10 +9,19 @@ import com.footballnewsmanager.backend.repositories.RoleRepository;
 import com.footballnewsmanager.backend.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
+import javax.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Component
@@ -41,12 +52,11 @@ public class AdminAccInitialization implements CommandLineRunner {
         if (!userRepository.existsByUsernameOrEmail(login, email)) {
             User user = new User(login, email, password);
             user.setPassword(passwordEncoder.encode(user.getPassword()));
-            Optional<Role> userRole = roleRepository.findByName(RoleName.ADMIN);
-
+            Optional<Role> userRole = roleRepository.findByName(RoleName.SUPER_ADMIN);
             if (userRole.isPresent()) {
                 user.setRoles(Collections.singleton(userRole.get()));
             } else {
-                Role role = new Role(RoleName.ADMIN);
+                Role role = new Role(RoleName.SUPER_ADMIN);
                 roleRepository.save(role);
                 user.setRoles(Collections.singleton(role));
             }
