@@ -4,11 +4,13 @@ package com.footballnewsmanager.backend.controllers;
 import com.footballnewsmanager.backend.api.request.auth.LoginRequest;
 import com.footballnewsmanager.backend.api.request.auth.RegisterRequest;
 import com.footballnewsmanager.backend.api.request.auth.ResetPasswordRequest;
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 import com.footballnewsmanager.backend.api.response.BaseResponse;
 import com.footballnewsmanager.backend.api.response.auth.ArgumentNotValidResponse;
 import com.footballnewsmanager.backend.api.response.auth.JwtTokenResponse;
 import com.footballnewsmanager.backend.auth.JwtTokenProvider;
-import com.footballnewsmanager.backend.exceptions.ArgumentNotValidException;
+import com.footballnewsmanager.backend.exceptions.ForbiddenRequestException;
+import com.footballnewsmanager.backend.exceptions.ValidationExceptionHandlers;
 import com.footballnewsmanager.backend.exceptions.BadRequestException;
 import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.helpers.MailSender;
@@ -26,19 +28,25 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.mail.internet.MimeMessage;
 import javax.transaction.Transactional;
 import javax.validation.Valid;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
 @RequestMapping("/auth")
-public class AuthController extends ArgumentNotValidException {
+@Validated
+public class AuthController extends ValidationExceptionHandlers {
 
 
     private final JavaMailSender javaMailSender;
@@ -99,14 +107,12 @@ public class AuthController extends ArgumentNotValidException {
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        Optional<Role> userRole = roleRepository.findByName(RoleName.USER);
-
-        if (userRole.isPresent()) {
-            user.setRoles(Collections.singleton(userRole.get()));
-        } else {
-            roleRepository.save(new Role(RoleName.USER));
-        }
-
+        Role role = roleRepository.findByName(RoleName.USER).orElseGet(()->{
+            Role createdRole = new Role(RoleName.USER);
+            roleRepository.save(createdRole);
+            return createdRole;
+        });
+        user.setRoles(Collections.singleton(role));
         User result = userRepository.save(user);
 
         //zobaczyć co to jest
@@ -118,24 +124,27 @@ public class AuthController extends ArgumentNotValidException {
 
     }
 
+    //authority user
+    //w configu zmienić dostęp
     @PutMapping("/logout")
-    public ResponseEntity<?> logout(@RequestHeader("Authorization") String jwtToken) {
-        BlackListToken blackListToken = new BlackListToken();
-        blackListToken.setToken(jwtToken.substring(7));
-        blacklistTokenRepository.save(blackListToken);
-        return ResponseEntity.ok(new BaseResponse(true, "Poprawnie wylogowano"));
+    public ResponseEntity<?> logout(@RequestHeader("Authorization") @Size(min= 7, max = 512) String jwtToken) {
+            BlackListToken blackListToken = new BlackListToken();
+            blackListToken.setToken(jwtToken.substring(7));
+            blacklistTokenRepository.save(blackListToken);
+            return ResponseEntity.ok(new BaseResponse(true, "Poprawnie wylogowano"));
     }
 
+    //authority user
     @GetMapping("/isLoggedIn")
-    public ResponseEntity<?> isLoggedIn(@RequestHeader("Authorization") String jwttoken) {
+    public ResponseEntity<?> isLoggedIn(@RequestHeader("Authorization") @Size(min = 7, max = 512) String jwttoken) {
         if (tokenProvider.validateToken(jwttoken.substring(7)))
             return ResponseEntity.ok(new BaseResponse(true, "Jesteś zalogowany"));
         else
-            return ResponseEntity.ok(new BaseResponse(false, "Nie jesteś zalogowany"));
+            throw new ForbiddenRequestException("Nie jesteś zalogowany, nie masz praw dostępu do Aplikacji");
     }
 
     @PostMapping("sendResetPassToken/{email}")
-    public ResponseEntity<BaseResponse> resetPasswordSendTokenToMail(@PathVariable("email") String email){
+    public ResponseEntity<BaseResponse> resetPasswordSendTokenToMail(@PathVariable("email") @NotBlank(message = ValidationMessage.EMAIL_NOT_BLANK) @Size(max = 40, message = ValidationMessage.EMAIL_SIZE) @Email(message = ValidationMessage.EMAIL_VALID) String email){
         Optional<User> userOptional = userRepository.findByEmail(email);
         if(userOptional.isPresent()){
             User user = userOptional.get();
@@ -162,7 +171,7 @@ public class AuthController extends ArgumentNotValidException {
 
     @PostMapping("resetPassword")
     @Transactional
-    public ResponseEntity<BaseResponse> resetPassword(@RequestBody ResetPasswordRequest resetPasswordRequest)
+    public ResponseEntity<BaseResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest)
     {
         String result = resetPasswordService.validateToken(resetPasswordRequest.getToken(), passwordResetTokenRepository);
         if(result.equals("Ok")){

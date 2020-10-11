@@ -32,7 +32,6 @@ public class Site {
     private String description;
 
     @JsonView(Views.Internal.class)
-    @NotBlank(message = ValidationMessage.HIGHLIGHTED_NOT_BLANK)
     private boolean highlighted = false;
 
     @OneToMany(mappedBy = "site", fetch = FetchType.LAZY)

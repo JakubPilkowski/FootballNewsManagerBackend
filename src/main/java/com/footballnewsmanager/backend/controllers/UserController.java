@@ -61,7 +61,7 @@ public class UserController {
         );
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('SUPER_ADMIN')")
     @DeleteMapping("{id}")
     public ResponseEntity<BaseResponse> deleteUser(@PathVariable("id") long id) {
         try {
@@ -324,21 +324,21 @@ public class UserController {
     }
 
 
-    private void checkUserExistByUsernameAndOnSuccess(String username, OnFindedUserInterface onFindedUserInterface) {
+    private void checkUserExistByUsernameAndOnSuccess(String username, OnPresentInterface<User> onPresentInterface) {
         Optional<User> userOptional = userRepository.findByUsername(username);
         if (userOptional.isPresent()) {
-            onFindedUserInterface.onSuccess(userOptional.get());
+            onPresentInterface.onSuccess(userOptional.get());
         } else {
             throw new ResourceNotFoundException("Nie ma takiego użytkownika!");
         }
     }
 
 
-    private void checkUserExistByTokenAndOnSuccess(String token, OnFindedUserInterface onFindedUserInterface) {
+    private void checkUserExistByTokenAndOnSuccess(String token, OnPresentInterface<User> onPresentInterface) {
         Long id = tokenProvider.getUserIdFromJWT(token.substring(7));
         Optional<User> userOptional = userRepository.findById(id);
         if (userOptional.isPresent()) {
-            onFindedUserInterface.onSuccess(userOptional.get());
+            onPresentInterface.onSuccess(userOptional.get());
         } else {
             throw new ResourceNotFoundException("Nie ma takiego użytkownika!");
         }

@@ -22,24 +22,4 @@ INSERT INTO public.leagues(id,apisportid, name, logo_url, type)
 VALUES (11, 88,'Eredivisie', 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Eredivisie_nieuw_logo_2017-.svg/1200px-Eredivisie_nieuw_logo_2017-.svg.png', 'LIGA');
 INSERT INTO public.leagues(id,apisportid, name, logo_url, type)
 VALUES (12, 221,'Austriacka Bundesliga', 'https://vignette.wikia.nocookie.net/logopedia/images/3/30/Logo_for_Austrian_Football_Bundesliga.png/revision/latest?cb=20180412045223', 'LIGA');
--- INSERT INTO public.league(id,apisportid, name, logo_url, type)
--- VALUES (13,'Süper Lig', 'https://www.transfermarkt.pl/images/logo/originals/tr1.png?lm=1571296616', 'LIGA');
--- INSERT INTO public.league(id,apisportid, name, logo_url, type)
--- VALUES (14,'Premier-liha', 'https://upload.wikimedia.org/wikipedia/commons/e/e9/%D0%9E%D1%84%D1%96%D1%86%D1%96%D0%B9%D0%BD%D0%B0_%D0%B5%D0%BC%D0%B1%D0%BB%D0%B5%D0%BC%D0%B0_%D0%9F%D1%80%D0%B5%D0%BC%27%D1%94%D1%80-%D0%9B%D1%96%D0%B3%D0%B8.png', 'LIGA');
--- INSERT INTO public.league(id,apisportid, name, logo_url, type)
--- VALUES (15,'SuperLiga', 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Superliga_2010.svg/1200px-Superliga_2010.svg.png', 'LIGA');
--- INSERT INTO public.league(id,apisportid, name, logo_url, type)
--- VALUES (16,'Swiss Super League', 'https://upload.wikimedia.org/wikipedia/en/c/ce/Logo_Raiffeisen_Super_League.png', 'LIGA');
--- INSERT INTO public.league(id,apisportid, name, logo_url, type)
--- VALUES (17,'Superleague Ellada', 'https://www.thesportsdb.com/images/media/league/badge/g5rxbr1517435561.png', 'LIGA');
--- INSERT INTO public.league(id,apisportid, name, logo_url, type)
--- VALUES (18,'1. HNL', 'https://cdn.footystats.org/img/competitions/croatia-prva-hnl.png', 'LIGA');
--- INSERT INTO public.league(id,apisportid, name, logo_url, type)
--- VALUES (19,'1. česká fotbalová liga', 'https://i.pinimg.com/originals/ec/60/97/ec6097036e354fe4c26866141ae2af19.png', 'LIGA');
--- INSERT INTO public.league(id,apisportid, name, logo_url, type)
--- VALUES (20,'Allsvenskan', 'https://upload.wikimedia.org/wikipedia/fi/b/b4/Allsvenskan_logo.png', 'LIGA');
--- INSERT INTO public.league(id,apisportid, name, logo_url, type)
--- VALUES (21,'Eliteserien', 'https://www.transfermarkt.pl/images/logo/originals/no1.png?lm=1481571796', 'LIGA');
--- INSERT INTO public.league(id,apisportid, name, logo_url, type)
--- VALUES (22,'1. liga', 'https://upload.wikimedia.org/wikipedia/en/thumb/8/8a/Slovak_Football_Association_logo.svg/1200px-Slovak_Football_Association_logo.svg.png', 'LIGA');
 

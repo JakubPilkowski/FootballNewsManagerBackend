@@ -53,17 +53,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         this.blacklistTokenRepository = blacklistTokenRepository;
     }
 
-//    @Bean
-//    public MethodValidationPostProcessor methodValidationPostProcessor() {
-//        return new MethodValidationPostProcessor();
-//    }
-
-
-//    @Bean
-//    public JavaMailSender mailSender(){
-//        return new JavaMailSenderImpl();
-//    }
-
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(){
         return new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService, blacklistTokenRepository);
@@ -73,7 +62,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(customUserDetailsService).passwordEncoder(passwordEncoder());
     }
-
 
     @Bean(BeanIds.AUTHENTICATION_MANAGER)
     @Override

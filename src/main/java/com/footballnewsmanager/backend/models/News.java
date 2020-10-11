@@ -3,9 +3,12 @@ package com.footballnewsmanager.backend.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -34,7 +37,8 @@ public class News {
     @NotBlank(message = ValidationMessage.IMAGE_NOT_BLANK)
     private String imageUrl;
 
-    @NotBlank(message = ValidationMessage.DATE_NOT_BLANK)
+    @NotNull(message = ValidationMessage.DATE_NOT_BLANK)
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate date;
 
     @ManyToOne
@@ -48,12 +52,11 @@ public class News {
     @JsonIgnore()
     private List<TeamNews> teamNews = new ArrayList<>();
 
-    @NotBlank(message = ValidationMessage.CLICKS_NOT_BLANK)
+    @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
+    @Min(value = 0, message = ValidationMessage.CLICKS_LESS_THAN_ZERO)
     private int clicks =0;
 
-    @NotBlank(message = ValidationMessage.HIGHLIGHTED_NOT_BLANK)
     private boolean highlighted= false;
-
 
     public String getTitle() {
         return title;

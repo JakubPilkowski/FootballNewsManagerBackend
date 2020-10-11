@@ -38,7 +38,6 @@ public class ValidationMessage {
     public static final String NEWS_URL_NOT_BLANK = "Link nie może być pusty";
     public static final String DATE_NOT_BLANK = "Data nie może być pusta";
     public static final String ROLE_NOT_BLANK = "Pole rola nie może być pusta";
-    public static final String ROLE_SIZE = "Pole rola musi zawierać maksymalnie 60 znaków";
     public static final String SITE_NAME_NOT_BLANK = "Nazwa strona nie może być pusta";
     public static final String SITE_NAME_SIZE = "Nazwa strony musi zawierać od 4 do 100 znaków";
     public static final String SITE_DESCRIPTION_NOT_BLANK = "Opis strony nie może być pusty";
@@ -48,4 +47,11 @@ public class ValidationMessage {
     public static final String TAG_NAME_NOT_BLANK = "Nazwa tagu nie może być pusta";
     public static final String TEAM_NAME_NOT_BLANK = "Nazwa drużyny nie może być pusta";
     public static final String TEAM_NAME_SIZE = "Nazwa drużyny musi zawierać od 3 do 50 znaków";
+    public static final String LANGUAGE_INVALID = "Niepoprawny Język";
+    public static final String CLICKS_LESS_THAN_ZERO = "Kliknięcia nie mogą być wartością ujemną";
+    public static final String ROLE_NAME_INVALID = "Niepoprawna wartość roli użytkownika";
+    public static final String LEAGUE_TYPE_INVALID = "Typ ligi jest niepoprawny";
+    public static final String ID_NOT_NULL = "Id nie może być puste";
+    public static final String ID_LESS_THAN_ZERO = "Id nie może być wartością ujemną";
+    public static final String TOKEN_SIZE = "Długość tokena musi wynosić dokładnie 67 znaków";
 }
