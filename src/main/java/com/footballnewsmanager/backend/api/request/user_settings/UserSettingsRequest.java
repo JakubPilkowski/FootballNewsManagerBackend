@@ -8,25 +8,27 @@ import com.footballnewsmanager.backend.models.Team;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 public class UserSettingsRequest {
+
 
     private List<Team> favouriteTeams;
 
     private List<Site> chosenSites;
 
 //    @Enumerated(EnumType.STRING)
-    @NotBlank(message = ValidationMessage.LANGUAGE_NOT_BLANK)
+    @NotNull(message = ValidationMessage.LANGUAGE_NOT_BLANK)
     private Language language;
 
-    @NotBlank(message = ValidationMessage.NOTIFICATION_NOT_BLANK)
+    @NotNull(message = ValidationMessage.NOTIFICATION_NOT_BLANK)
     boolean notifications;
 
-    @NotBlank(message = ValidationMessage.DARK_MODE_NOT_BLANK)
+    @NotNull(message = ValidationMessage.DARK_MODE_NOT_BLANK)
     boolean darkMode;
 
-    @NotBlank(message = ValidationMessage.PROPOSED_NEWS_NOT_BLANK)
+    @NotNull(message = ValidationMessage.PROPOSED_NEWS_NOT_BLANK)
     boolean proposedNews;
 
     public Language getLanguage() {

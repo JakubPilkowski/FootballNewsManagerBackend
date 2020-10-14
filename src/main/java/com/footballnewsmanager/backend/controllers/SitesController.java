@@ -6,13 +6,11 @@ import com.footballnewsmanager.backend.api.response.BaseResponse;
 import com.footballnewsmanager.backend.api.response.sites.SiteResponse;
 import com.footballnewsmanager.backend.api.response.sites.SiteWithClicks;
 import com.footballnewsmanager.backend.api.response.sites.SitesResponse;
-import com.footballnewsmanager.backend.exceptions.ValidationExceptionHandlers;
-import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.models.Site;
 import com.footballnewsmanager.backend.models.SiteClick;
 import com.footballnewsmanager.backend.repositories.SiteClickRepository;
 import com.footballnewsmanager.backend.repositories.SiteRepository;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.footballnewsmanager.backend.services.BaseService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -31,11 +29,12 @@ public class SitesController {
 
     private final SiteRepository siteRepository;
     private final SiteClickRepository siteClickRepository;
+    private final BaseService baseService;
 
-
-    public SitesController(SiteRepository siteRepository, SiteClickRepository siteClickRepository) {
+    public SitesController(SiteRepository siteRepository, SiteClickRepository siteClickRepository, BaseService baseService) {
         this.siteRepository = siteRepository;
         this.siteClickRepository = siteClickRepository;
+        this.baseService = baseService;
     }
 
 
@@ -68,45 +67,36 @@ public class SitesController {
     public ResponseEntity<BaseResponse> toggleHighlight(@PathVariable("id")
                                                         @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
                                                                 Long id) {
-        AtomicReference<SiteResponse> siteResponse = new AtomicReference<>();
-        checkExistByIdAndOnSuccess(id, new Site(), siteRepository, "Nie ma takiej strony",
-                (site) -> {
-                    boolean highlighted = site.isHighlighted();
-                    site.setHighlighted(!highlighted);
-                    siteRepository.save(site);
-                    siteResponse.set(new SiteResponse(true, "Wyróżniono stronę", site));
+        Site site = baseService.checkExistByIdAndOnSuccess(id, new Site(), siteRepository, "Nie ma takiej strony",
+                (siteFromDB) -> {
+                    boolean highlighted = siteFromDB.isHighlighted();
+                    siteFromDB.setHighlighted(!highlighted);
+                    siteRepository.save(siteFromDB);
+                    return siteFromDB;
                 });
-        return ResponseEntity.ok(siteResponse.get());
+        return ResponseEntity.ok(new SiteResponse(true, "Wyróżniono stronę", site));
     }
 
     @PutMapping("/click/{id}")
-    public ResponseEntity<BaseResponse> addClickToSite(@Valid @PathVariable("id")
+    public ResponseEntity<BaseResponse> addClickToSite(@PathVariable("id")
                                                        @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
                                                                Long id) {
-        AtomicReference<BaseResponse> baseResponse = new AtomicReference<>();
-        checkExistByIdAndOnSuccess(id, new Site(), siteRepository, "Nie ma takiej strony",
-                (site) -> {
-                    SiteClick click = siteClickRepository.findBySiteAndDate(site, LocalDate.now()).map((siteClick) -> {
+        baseService.checkExistByIdAndOnSuccess(id, new Site(), siteRepository, "Nie ma takiej strony",
+                (siteFromDB) -> {
+                    SiteClick click = siteClickRepository.findBySiteAndDate(siteFromDB, LocalDate.now()).map((siteClick) -> {
                         int clicks = siteClick.getClicks();
                         siteClick.setClicks(clicks + 1);
                         return siteClick;
                     }).orElseGet(() -> {
                         SiteClick createdSiteClick = new SiteClick();
-                        createdSiteClick.setSite(site);
+                        createdSiteClick.setSite(siteFromDB);
                         createdSiteClick.setDate(LocalDate.now());
                         createdSiteClick.setClicks(1);
                         return createdSiteClick;
                     });
                     siteClickRepository.save(click);
-                    baseResponse.set(new BaseResponse(true, "Dodano kliknięcie"));
+                    return siteFromDB;
                 });
-        return ResponseEntity.ok(baseResponse.get());
-    }
-
-    private <T, R extends JpaRepository<T, Long>> void checkExistByIdAndOnSuccess(Long id, T type, R repository, String message, OnPresentInterface<T> onPresentInterface) {
-        repository.findById(id).map(result -> {
-            onPresentInterface.onSuccess(result);
-            return result;
-        }).orElseThrow(() -> new ResourceNotFoundException(message));
+        return ResponseEntity.ok(new BaseResponse(true, "Dodano kliknięcie"));
     }
 }

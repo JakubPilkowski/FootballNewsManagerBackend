@@ -3,7 +3,9 @@ package com.footballnewsmanager.backend.models;
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 
 import javax.persistence.*;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.Date;
 
 @Entity
@@ -12,6 +14,7 @@ public class PasswordResetToken {
 
     @Id
     @GeneratedValue()
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long id;
 
     @NotBlank(message = ValidationMessage.TOKEN_NOT_BLANK)

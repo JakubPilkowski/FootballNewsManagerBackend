@@ -1,5 +1,6 @@
-package com.footballnewsmanager.backend.auth;
+package com.footballnewsmanager.backend.services;
 
+import com.footballnewsmanager.backend.auth.UserPrincipal;
 import com.footballnewsmanager.backend.models.User;
 import com.footballnewsmanager.backend.repositories.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;

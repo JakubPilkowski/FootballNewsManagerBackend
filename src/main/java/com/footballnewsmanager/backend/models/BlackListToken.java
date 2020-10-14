@@ -6,7 +6,9 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "black_list_tokens")
@@ -14,6 +16,7 @@ public class BlackListToken {
 
     @Id
     @GeneratedValue()
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long id;
 
     @NotBlank(message= ValidationMessage.TOKEN_NOT_BLANK)

@@ -7,6 +7,7 @@ import com.footballnewsmanager.backend.validators.EnumNamePattern;
 import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.*;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -19,6 +20,7 @@ public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonIgnore
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long id;
 
     @Enumerated(EnumType.STRING)

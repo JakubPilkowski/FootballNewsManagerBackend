@@ -16,6 +16,7 @@ public class SiteClick {
 
     @Id
     @GeneratedValue()
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long id;
 
     @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)

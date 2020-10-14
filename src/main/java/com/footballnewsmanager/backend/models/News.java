@@ -21,14 +21,17 @@ import java.util.Set;
 public class News {
 
     @Id
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long siteId;
 
     @Id
+    @NotNull(message = ValidationMessage.ID_NOT_NULL)
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long id;
 
 
     @NotBlank(message = ValidationMessage.NEWS_TITLE_NOT_BLANK)
-    @Size(min=4, max=100, message = ValidationMessage.NEWS_TITLE_SIZE)
+    @Size(min=4, max=250, message = ValidationMessage.NEWS_TITLE_SIZE)
     private String title;
 
     @NotBlank(message = ValidationMessage.NEWS_URL_NOT_BLANK)

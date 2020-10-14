@@ -6,7 +6,9 @@ import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.*;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.Set;
 
 @Entity
@@ -19,6 +21,7 @@ import java.util.Set;
 public class Marker {
     @Id
     @GeneratedValue()
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long id;
 
     @NotBlank(message = ValidationMessage.MARKER_NAME_NOT_BLANK)

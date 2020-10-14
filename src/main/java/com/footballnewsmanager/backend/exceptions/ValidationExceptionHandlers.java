@@ -1,7 +1,9 @@
 package com.footballnewsmanager.backend.exceptions;
 
 import com.footballnewsmanager.backend.api.response.auth.ArgumentNotValidResponse;
+import com.sun.org.apache.xpath.internal.Arg;
 import org.springframework.core.convert.ConversionFailedException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -51,8 +53,8 @@ public class ValidationExceptionHandlers {
     public ArgumentNotValidResponse handleConversionExceptions(
             ConversionFailedException ex) {
         Map<String, String> errors = new HashMap<>();
-        String fieldName = ex.getMessage().split("\"")[1];
-        String errorMessage = "Podany endpoint jest nieprawidłowy";
+        String fieldName = "konwersja";
+        String errorMessage = ex.getCause().getLocalizedMessage();
         errors.put(fieldName, errorMessage);
         return new ArgumentNotValidResponse(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(),
                 "Conversion Error", errors);

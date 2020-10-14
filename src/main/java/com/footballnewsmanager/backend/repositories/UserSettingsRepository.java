@@ -13,6 +13,8 @@ public interface UserSettingsRepository<T> extends JpaRepository<T, Long> {
 
     Optional<List<T>> findByUser(User user);
 
+    boolean existsByUser(User user);
+
     void deleteByUser(User user);
 
 }
