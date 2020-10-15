@@ -20,6 +20,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Boolean existsByEmail(String email);
 
-    Optional<List<User>> findByIdNot(Long id);
+    Optional<List<User>> findByIdNotAndUsernameNot(Long id, String adminName);
 
 }

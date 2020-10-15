@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 import com.footballnewsmanager.backend.api.request.user_settings.*;
 import com.footballnewsmanager.backend.api.response.BaseResponse;
-import com.footballnewsmanager.backend.api.response.auth.ArgumentNotValidResponse;
 import com.footballnewsmanager.backend.auth.JwtTokenProvider;
 import com.footballnewsmanager.backend.auth.UserPrincipal;
 import com.footballnewsmanager.backend.exceptions.BadRequestException;
@@ -15,8 +14,8 @@ import com.footballnewsmanager.backend.repositories.*;
 import com.footballnewsmanager.backend.services.UserService;
 import com.footballnewsmanager.backend.validators.EnumNamePattern;
 import com.footballnewsmanager.backend.views.Views;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,16 +29,16 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 @RestController
 @RequestMapping("/users")
 @Validated
 public class UserController {
+
+    @Value("${app.adminName}")
+    private String username;
 
     private final UserRepository userRepository;
     private final FavouriteTeamRepository favouriteTeamRepository;
@@ -64,7 +63,7 @@ public class UserController {
     @JsonView(Views.Internal.class)
     public List<User> users() {
         Long id = ((UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId();
-        return userRepository.findByIdNot(id).orElseThrow(() ->
+        return userRepository.findByIdNotAndUsernameNot(id, username).orElseThrow(() ->
                 new ResourceNotFoundException("Nie ma użytkowników!")
         );
     }
@@ -95,26 +94,26 @@ public class UserController {
 
 
     @PutMapping("{username}/adminRole={role}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('SUPER_ADMIN')")
     public ResponseEntity<BaseResponse> toggleAdminRole(@PathVariable("username")
                                                         @NotBlank(message = ValidationMessage.USERNAME_NOT_BLANK)
                                                         @Size(min = 4, max = 20, message = ValidationMessage.USERNAME_SIZE)
                                                                 String username,
                                                         @PathVariable("role") @NotNull(message = ValidationMessage.ROLE_NOT_BLANK) Boolean role) {
-        AtomicReference<String> message = new AtomicReference<>("");
-        User user = userService.checkUserExistByUsernameAndOnSuccess(username, userRepository, userFromDB -> {
-            Role adminRole = roleRepository.findByName(RoleName.ADMIN).orElseThrow(() -> new BadRequestException("Nie ma takiej roli użytkownika"));
-            if (role) {
-                userFromDB.addToRoles(adminRole);
-                message.set("Nadano prawa administracyjne!");
-            } else {
-                userFromDB.removeFromRoles(adminRole);
-                message.set("Usunięto prawa administracyjne!");
-            }
-            return userFromDB;
-        });
-        userRepository.save(user);
-        return ResponseEntity.ok(new BaseResponse(true, message.get()));
+            AtomicReference<String> message = new AtomicReference<>("");
+            User user = userService.checkUserExistByUsernameAndOnSuccess(username, userRepository, userFromDB -> {
+                Role adminRole = roleRepository.findByName(RoleName.ADMIN).orElseThrow(() -> new BadRequestException("Nie ma takiej roli użytkownika"));
+                if (role) {
+                    userFromDB.addToRoles(adminRole);
+                    message.set("Nadano prawa administracyjne!");
+                } else {
+                    userFromDB.removeFromRoles(adminRole);
+                    message.set("Usunięto prawa administracyjne!");
+                }
+                return userFromDB;
+            });
+            userRepository.save(user);
+            return ResponseEntity.ok(new BaseResponse(true, message.get()));
     }
 
 
@@ -141,7 +140,6 @@ public class UserController {
             throw new ResourceNotFoundException("Dla podanego id nie ma użytkownika", exception);
         }
     }
-
 
     @PutMapping("me")
     @Transactional
