@@ -23,7 +23,7 @@ public class PasswordResetToken {
     @OneToOne()
     private User user;
 
-    @NotBlank(message = ValidationMessage.DATE_NOT_BLANK)
+    @NotNull(message = ValidationMessage.DATE_NOT_BLANK)
     private Date expiryDate;
 
     public Long getId() {

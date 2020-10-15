@@ -12,6 +12,7 @@ import com.footballnewsmanager.backend.repositories.SiteClickRepository;
 import com.footballnewsmanager.backend.repositories.SiteRepository;
 import com.footballnewsmanager.backend.services.BaseService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,7 +38,6 @@ public class SitesController {
         this.baseService = baseService;
     }
 
-
     @GetMapping("")
     public ResponseEntity<SitesResponse> getSites() {
         List<Site> sites = siteRepository.findAll();
@@ -62,7 +62,7 @@ public class SitesController {
         return ResponseEntity.ok(sitesResponse);
     }
 
-    //role admin
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("/highlight/{id}")
     public ResponseEntity<BaseResponse> toggleHighlight(@PathVariable("id")
                                                         @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)

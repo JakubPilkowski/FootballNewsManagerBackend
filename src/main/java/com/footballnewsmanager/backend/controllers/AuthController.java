@@ -23,6 +23,7 @@ import com.footballnewsmanager.backend.services.ResetPasswordService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -75,7 +76,7 @@ public class AuthController extends ValidationExceptionHandlers {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) throws Exception{
+    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) throws Exception {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getUsernameOrEmail(),
@@ -94,10 +95,10 @@ public class AuthController extends ValidationExceptionHandlers {
         if (userRepository.existsByUsernameOrEmail(registerRequest.getUsername(), registerRequest.getEmail())) {
             Map<String, String> errors = new HashMap<>();
             if (userRepository.existsByUsername(registerRequest.getUsername())) {
-                errors.put("username" , "Podana nazwa użytkownika już istnieje");
+                errors.put("username", "Podana nazwa użytkownika już istnieje");
             }
             if (userRepository.existsByEmail(registerRequest.getEmail())) {
-                errors.put("email" , "Na podany adres email jest już założone konto");
+                errors.put("email", "Na podany adres email jest już założone konto");
             }
             return ResponseEntity.badRequest().body(new ArgumentNotValidResponse(LocalDateTime.now(),
                     HttpStatus.BAD_REQUEST.value(), "Bad Credentials Error", errors));
@@ -107,7 +108,7 @@ public class AuthController extends ValidationExceptionHandlers {
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        Role role = roleRepository.findByName(RoleName.USER).orElseGet(()->{
+        Role role = roleRepository.findByName(RoleName.USER).orElseGet(() -> {
             Role createdRole = new Role(RoleName.USER);
             roleRepository.save(createdRole);
             return createdRole;
@@ -115,7 +116,6 @@ public class AuthController extends ValidationExceptionHandlers {
         user.setRoles(Collections.singleton(role));
         User result = userRepository.save(user);
 
-        //zobaczyć co to jest
         URI location = ServletUriComponentsBuilder
                 .fromCurrentContextPath().path("/users/{username}")
                 .buildAndExpand(result.getUsername()).toUri();
@@ -124,17 +124,16 @@ public class AuthController extends ValidationExceptionHandlers {
 
     }
 
-    //authority user
-    //w configu zmienić dostęp
+
+    @PreAuthorize("hasAuthority('USER')")
     @PutMapping("/logout")
-    public ResponseEntity<?> logout(@RequestHeader("Authorization") @Size(min= 7, max = 512) String jwtToken) {
-            BlackListToken blackListToken = new BlackListToken();
-            blackListToken.setToken(jwtToken.substring(7));
-            blacklistTokenRepository.save(blackListToken);
-            return ResponseEntity.ok(new BaseResponse(true, "Poprawnie wylogowano"));
+    public ResponseEntity<?> logout(@RequestHeader("Authorization") @Size(min = 7, max = 512) String jwtToken) {
+        BlackListToken blackListToken = new BlackListToken();
+        blackListToken.setToken(jwtToken.substring(7));
+        blacklistTokenRepository.save(blackListToken);
+        return ResponseEntity.ok(new BaseResponse(true, "Poprawnie wylogowano"));
     }
 
-    //authority user
     @GetMapping("/isLoggedIn")
     public ResponseEntity<?> isLoggedIn(@RequestHeader("Authorization") @Size(min = 7, max = 512) String jwttoken) {
         if (tokenProvider.validateToken(jwttoken.substring(7)))
@@ -144,11 +143,9 @@ public class AuthController extends ValidationExceptionHandlers {
     }
 
     @PostMapping("sendResetPassToken/{email}")
-    public ResponseEntity<BaseResponse> resetPasswordSendTokenToMail(@PathVariable("email") @NotBlank(message = ValidationMessage.EMAIL_NOT_BLANK) @Size(max = 40, message = ValidationMessage.EMAIL_SIZE) @Email(message = ValidationMessage.EMAIL_VALID) String email){
-        Optional<User> userOptional = userRepository.findByEmail(email);
-        if(userOptional.isPresent()){
-            User user = userOptional.get();
-            if(!passwordResetTokenRepository.existsByUserAndExpiryDateGreaterThan(userOptional.get(), Calendar.getInstance().getTime())){
+    public ResponseEntity<BaseResponse> resetPasswordSendTokenToMail(@PathVariable("email") @NotBlank(message = ValidationMessage.EMAIL_NOT_BLANK) @Size(max = 40, message = ValidationMessage.EMAIL_SIZE) @Email(message = ValidationMessage.EMAIL_VALID) String email) {
+        userRepository.findByEmail(email).map(user -> {
+            if (!passwordResetTokenRepository.existsByUserAndExpiryDateGreaterThan(user, Calendar.getInstance().getTime())) {
                 String token = UUID.randomUUID().toString();
                 PasswordResetToken passwordResetToken = new PasswordResetToken();
                 passwordResetToken.setToken(token);
@@ -157,39 +154,30 @@ public class AuthController extends ValidationExceptionHandlers {
                 calendar.add(Calendar.DATE, 1);
                 passwordResetToken.setExpiryDate(calendar.getTime());
                 passwordResetTokenRepository.save(passwordResetToken);
-                MimeMessage mailMessage= MailSender.createResetPassMail("Reset hasła",token, email, javaMailSender);
+                MimeMessage mailMessage = MailSender.createResetPassMail("Reset hasła", token, email, javaMailSender);
                 javaMailSender.send(mailMessage);
-                return ResponseEntity.ok(new BaseResponse(true, "wysłano mail z tokenem aktywacyjnym"));
-            }
-            else{
-                throw new BadRequestException("token został już wygenerowany");
-            }
-        }else{
-            throw new ResourceNotFoundException("Nie znaleziono konta na podany adres mailowy!");
-        }
+            } else throw new BadRequestException("token został już wygenerowany");
+            return user;
+        }).orElseThrow(() -> new ResourceNotFoundException("Nie znaleziono konta na podany adres mailowy!"));
+        return ResponseEntity.ok(new BaseResponse(true, "wysłano mail z tokenem aktywacyjnym"));
     }
 
     @PostMapping("resetPassword")
     @Transactional
-    public ResponseEntity<BaseResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest)
-    {
-        String result = resetPasswordService.validateToken(resetPasswordRequest.getToken(), passwordResetTokenRepository);
-        if(result.equals("Ok")){
-            Optional<PasswordResetToken> passwordResetToken = passwordResetTokenRepository.findByToken(resetPasswordRequest.getToken());
-            if(passwordResetToken.isPresent()){
-                User user = passwordResetToken.get().getUser();
-                String pass = resetPasswordRequest.getPassword();
-                user.setPassword(passwordEncoder.encode(pass));
-                userRepository.save(user);
-                passwordResetTokenRepository.delete(passwordResetToken.get());
-            }
-        }
-        else{
-            throw new BadRequestException(result);
-        }
+    public ResponseEntity<BaseResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest) {
+        passwordResetTokenRepository.findByToken(resetPasswordRequest.getToken()).map(passwordResetToken -> {
+            String result  = resetPasswordService.isTokenExpired(passwordResetToken) ? "Przedawniony Token" : "Ok";
+            if (result.equals("Ok")) {
+                    User user = passwordResetToken.getUser();
+                    String pass = resetPasswordRequest.getPassword();
+                    user.setPassword(passwordEncoder.encode(pass));
+                    userRepository.save(user);
+                    passwordResetTokenRepository.delete(passwordResetToken);
+                    return passwordResetToken;
+            }else throw new BadRequestException(result);
+        }).orElseThrow(()->new BadRequestException("Niepoprawny token"));
         return ResponseEntity.ok(new BaseResponse(true, "Zaktualizowano hasło"));
     }
-
 
 
 }

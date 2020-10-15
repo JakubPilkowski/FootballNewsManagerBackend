@@ -1,7 +1,6 @@
 package com.footballnewsmanager.backend.start_up;
 
 import com.footballnewsmanager.backend.models.Role;
-import com.footballnewsmanager.backend.models.RoleName;
 import com.footballnewsmanager.backend.models.User;
 import com.footballnewsmanager.backend.repositories.RoleRepository;
 import com.footballnewsmanager.backend.repositories.UserRepository;
@@ -10,15 +9,14 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 public class AdminAccInitialization implements CommandLineRunner {
 
 
     @Value("${app.adminName}")
-    private String login;
+    private String username;
 
     @Value("${app.adminEmail}")
     private String email;
@@ -38,17 +36,12 @@ public class AdminAccInitialization implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (!userRepository.existsByUsernameOrEmail(login, email)) {
-            User user = new User(login, email, password);
+        if (!userRepository.existsByUsernameOrEmail(username, email)) {
+            User user = new User(username, email, password);
             user.setPassword(passwordEncoder.encode(user.getPassword()));
-            Optional<Role> userRole = roleRepository.findByName(RoleName.ADMIN);
-            if (userRole.isPresent()) {
-                user.setRoles(Collections.singleton(userRole.get()));
-            } else {
-                Role role = new Role(RoleName.SUPER_ADMIN);
-                roleRepository.save(role);
-                user.setRoles(Collections.singleton(role));
-            }
+            List<Role> roles = roleRepository.findAll();
+            Set<Role> roleSet = new HashSet<>(roles);
+            user.setRoles(roleSet);
             userRepository.save(user);
         }
     }
