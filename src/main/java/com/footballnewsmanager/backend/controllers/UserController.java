@@ -45,10 +45,11 @@ public class UserController {
     private final UserSiteRepository userSiteRepository;
     private final BlacklistTokenRepository blacklistTokenRepository;
     private final RoleRepository roleRepository;
+    private final TeamRepository teamRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserService userService;
 
-    public UserController(UserRepository userRepository, FavouriteTeamRepository favouriteTeamRepository, TeamRepository teamRepository, UserSiteRepository userSiteRepository, JwtTokenProvider tokenProvider, BlacklistTokenRepository blacklistTokenRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, UserService userService, SiteRepository siteRepository) {
+    public UserController(UserRepository userRepository, FavouriteTeamRepository favouriteTeamRepository, TeamRepository teamRepository, UserSiteRepository userSiteRepository, JwtTokenProvider tokenProvider, BlacklistTokenRepository blacklistTokenRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, UserService userService, SiteRepository siteRepository, TeamRepository teamRepository1) {
         this.userRepository = userRepository;
         this.favouriteTeamRepository = favouriteTeamRepository;
         this.userSiteRepository = userSiteRepository;
@@ -56,6 +57,7 @@ public class UserController {
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.userService = userService;
+        this.teamRepository = teamRepository1;
     }
 
     @GetMapping("")
@@ -100,20 +102,20 @@ public class UserController {
                                                         @Size(min = 4, max = 20, message = ValidationMessage.USERNAME_SIZE)
                                                                 String username,
                                                         @PathVariable("role") @NotNull(message = ValidationMessage.ROLE_NOT_BLANK) Boolean role) {
-            AtomicReference<String> message = new AtomicReference<>("");
-            User user = userService.checkUserExistByUsernameAndOnSuccess(username, userRepository, userFromDB -> {
-                Role adminRole = roleRepository.findByName(RoleName.ADMIN).orElseThrow(() -> new BadRequestException("Nie ma takiej roli użytkownika"));
-                if (role) {
-                    userFromDB.addToRoles(adminRole);
-                    message.set("Nadano prawa administracyjne!");
-                } else {
-                    userFromDB.removeFromRoles(adminRole);
-                    message.set("Usunięto prawa administracyjne!");
-                }
-                return userFromDB;
-            });
-            userRepository.save(user);
-            return ResponseEntity.ok(new BaseResponse(true, message.get()));
+        AtomicReference<String> message = new AtomicReference<>("");
+        User user = userService.checkUserExistByUsernameAndOnSuccess(username, userRepository, userFromDB -> {
+            Role adminRole = roleRepository.findByName(RoleName.ADMIN).orElseThrow(() -> new BadRequestException("Nie ma takiej roli użytkownika"));
+            if (role) {
+                userFromDB.addToRoles(adminRole);
+                message.set("Nadano prawa administracyjne!");
+            } else {
+                userFromDB.removeFromRoles(adminRole);
+                message.set("Usunięto prawa administracyjne!");
+            }
+            return userFromDB;
+        });
+        userRepository.save(user);
+        return ResponseEntity.ok(new BaseResponse(true, message.get()));
     }
 
 
@@ -255,14 +257,18 @@ public class UserController {
         return ResponseEntity.ok(new BaseResponse(true, "Zmiana motywu"));
     }
 
-    @PutMapping("me/addTeam")
+    @PutMapping("me/addTeam/{id}")
     @JsonView(Views.Public.class)
-    public User addTeam(@Valid @NotNull @RequestBody FavouriteTeamRequest teamRequest) {
+    public User addTeam(@PathVariable("id") @NotNull @Min(value = 0) Long id) {
         return userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
-            if (!favouriteTeamRepository.findByUserAndTeam(user, teamRequest.getTeam()).isPresent()) {
+            Team team = teamRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej drużyny"));
+            if (!favouriteTeamRepository.findByUserAndTeam(user, team).isPresent()) {
                 FavouriteTeam favouriteTeam = new FavouriteTeam();
-                favouriteTeam.setTeam(teamRequest.getTeam());
+                favouriteTeam.setTeam(team);
                 favouriteTeam.setUser(user);
+                team.setChosenAmount(team.getChosenAmount() + 1);
+                team.measurePopularity();
+                teamRepository.save(team);
                 favouriteTeamRepository.save(favouriteTeam);
                 return user;
             } else {
@@ -271,13 +277,17 @@ public class UserController {
         });
     }
 
-    @DeleteMapping("me/removeTeam")
+    @DeleteMapping("me/removeTeam/{id}")
     @JsonView(Views.Public.class)
     @Transactional
-    public User removeTeam(@Valid @RequestBody FavouriteTeamRequest favouriteTeamRequest) {
+    public User removeTeam(@PathVariable("id") @NotNull @Min(value = 0) Long id) {
+        Team team = teamRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej drużyny"));
         return userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
             try {
-                favouriteTeamRepository.deleteByUserAndTeam(user, favouriteTeamRequest.getTeam());
+                favouriteTeamRepository.deleteByUserAndTeam(user, team);
+                team.setChosenAmount(team.getChosenAmount() - 1);
+                team.measurePopularity();
+                teamRepository.save(team);
                 return user;
             } catch (EmptyResultDataAccessException exception) {
                 throw new ResourceNotFoundException("Podany użytkownik nie ma polubionej danej drużyny!", exception);

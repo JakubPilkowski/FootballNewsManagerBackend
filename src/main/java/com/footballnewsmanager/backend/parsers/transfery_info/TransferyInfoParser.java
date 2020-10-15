@@ -93,8 +93,8 @@ public class TransferyInfoParser {
                         newsTagRepository.save(newsTag);
                     }
 
-//                    List<Team> teams = teamRepository.findAll();
-                    ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository, markerRepository);
+                    ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository,
+                            markerRepository, teamRepository);
                 }
             }
         } catch (IOException e) {

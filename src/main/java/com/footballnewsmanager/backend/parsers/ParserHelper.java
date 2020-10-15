@@ -13,7 +13,10 @@ import java.util.Set;
 public class ParserHelper {
 
 
-    public static void connectNewsWithTeams(Set<Tag> tagSet, News news, TeamNewsRepository teamNewsRepository, MarkerRepository markerRepository) {
+    public static void connectNewsWithTeams(Set<Tag> tagSet, News news,
+                                            TeamNewsRepository teamNewsRepository,
+                                            MarkerRepository markerRepository,
+                                            TeamRepository teamRepository) {
 
         for (Tag tag : tagSet) {
             Optional<Marker> marker = markerRepository.findByName(tag.getName());
@@ -24,6 +27,9 @@ public class ParserHelper {
                         TeamNews teamNews = new TeamNews();
                         teamNews.setNews(news);
                         teamNews.setTeam(teamFromMarker);
+                        teamFromMarker.setNewsCount(teamFromMarker.getNewsCount()+1);
+                        teamFromMarker.measurePopularity();
+                        teamRepository.save(teamFromMarker);
                         teamNewsRepository.save(teamNews);
                     }
                 }

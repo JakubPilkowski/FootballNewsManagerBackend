@@ -8,7 +8,6 @@ import com.footballnewsmanager.backend.views.Views;
 import javax.persistence.*;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +17,11 @@ import java.util.Set;
 @Table(name = "teams")
 @JsonView(Views.Public.class)
 public class Team {
+
+    private final int NEWS_MULTIPLIER = 1;
+    private final double CHOSEN_BY_MULTIPLIER = 0.75;
+    private final double CLICK_MULTIPLIER = 0.5;
+
 
     @Id
     @GeneratedValue()
@@ -30,6 +34,21 @@ public class Team {
 
     @NotBlank(message = ValidationMessage.LOGO_NOT_BLANK)
     private String logoUrl;
+
+
+    @Min(value = 0, message = ValidationMessage.POPULARITY_LESS_THAN_ZERO)
+    @JsonView(Views.Internal.class)
+    private double popularity = 0f;
+
+    @Min(value = 0, message = ValidationMessage.POPULARITY_LESS_THAN_ZERO)
+    private Long clicks= 0L;
+
+    @Min(value = 0, message = ValidationMessage.POPULARITY_LESS_THAN_ZERO)
+    private Long newsCount= 0L;
+
+    @Min(value = 0, message = ValidationMessage.POPULARITY_LESS_THAN_ZERO)
+    private Long chosenAmount = 0L;
+
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -105,5 +124,43 @@ public class Team {
 
     public void setUserTeams(List<FavouriteTeam> userTeams) {
         this.userTeams = userTeams;
+    }
+
+    public double getPopularity() {
+        return popularity;
+    }
+
+    public void setPopularity(double popularity) {
+        this.popularity = popularity;
+    }
+
+    public Long getClicks() {
+        return clicks;
+    }
+
+    public void setClicks(Long clicks) {
+        this.clicks = clicks;
+    }
+
+    public Long getNewsCount() {
+        return newsCount;
+    }
+
+    public void setNewsCount(Long newsCount) {
+        this.newsCount = newsCount;
+    }
+
+    public void measurePopularity(){
+        setPopularity(getClicks()*CLICK_MULTIPLIER
+                +getNewsCount()*NEWS_MULTIPLIER
+                +getChosenAmount()*CHOSEN_BY_MULTIPLIER);
+    }
+
+    public Long getChosenAmount() {
+        return chosenAmount;
+    }
+
+    public void setChosenAmount(Long chosenAmount) {
+        this.chosenAmount = chosenAmount;
     }
 }

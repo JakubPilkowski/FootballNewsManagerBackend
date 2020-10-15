@@ -55,4 +55,5 @@ public class ValidationMessage {
     public static final String ID_LESS_THAN_ZERO = "Id nie może być wartością ujemną";
     public static final String TOKEN_SIZE = "Długość tokena musi wynosić dokładnie 67 znaków";
     public static final String REQUEST_INVALID = "Request nieprawidłowy";
+    public static final String POPULARITY_LESS_THAN_ZERO = "Popularność nie może być wartością pustą";
 }
