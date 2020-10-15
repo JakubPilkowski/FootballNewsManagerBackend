@@ -3,9 +3,12 @@ package com.footballnewsmanager.backend.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.*;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "user_sites")
@@ -14,6 +17,8 @@ public class UserSite {
 
     @Id
     @GeneratedValue()
+    @NotNull(message = ValidationMessage.ID_NOT_NULL)
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long id;
 
     @ManyToOne

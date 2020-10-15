@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
 
-public interface NewsRepository extends JpaRepository<News,Integer> {
+public interface NewsRepository extends JpaRepository<News,Long> {
 
 
     boolean existsBySiteIdAndId(Long siteId, Long id);

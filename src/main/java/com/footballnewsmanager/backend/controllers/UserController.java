@@ -2,68 +2,78 @@ package com.footballnewsmanager.backend.controllers;
 
 
 import com.fasterxml.jackson.annotation.JsonView;
-import com.footballnewsmanager.backend.api.request.user_settings.CredentialsChangeRequest;
-import com.footballnewsmanager.backend.api.request.user_settings.FavouriteTeamRequest;
-import com.footballnewsmanager.backend.api.request.user_settings.UserSiteRequest;
-import com.footballnewsmanager.backend.api.request.user_settings.UserSettingsRequest;
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
+import com.footballnewsmanager.backend.api.request.user_settings.*;
 import com.footballnewsmanager.backend.api.response.BaseResponse;
+import com.footballnewsmanager.backend.api.response.auth.ArgumentNotValidResponse;
 import com.footballnewsmanager.backend.auth.JwtTokenProvider;
 import com.footballnewsmanager.backend.auth.UserPrincipal;
 import com.footballnewsmanager.backend.exceptions.BadRequestException;
 import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.models.*;
 import com.footballnewsmanager.backend.repositories.*;
+import com.footballnewsmanager.backend.services.UserService;
+import com.footballnewsmanager.backend.validators.EnumNamePattern;
 import com.footballnewsmanager.backend.views.Views;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.transaction.Transactional;
+import javax.validation.Valid;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 @RestController
 @RequestMapping("/users")
+@Validated
 public class UserController {
 
     private final UserRepository userRepository;
     private final FavouriteTeamRepository favouriteTeamRepository;
-    private final TeamRepository teamRepository;
     private final UserSiteRepository userSiteRepository;
-    private final JwtTokenProvider tokenProvider;
     private final BlacklistTokenRepository blacklistTokenRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserService userService;
 
-    public UserController(UserRepository userRepository, FavouriteTeamRepository favouriteTeamRepository, TeamRepository teamRepository, UserSiteRepository userSiteRepository, JwtTokenProvider tokenProvider, BlacklistTokenRepository blacklistTokenRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+    public UserController(UserRepository userRepository, FavouriteTeamRepository favouriteTeamRepository, TeamRepository teamRepository, UserSiteRepository userSiteRepository, JwtTokenProvider tokenProvider, BlacklistTokenRepository blacklistTokenRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, UserService userService, SiteRepository siteRepository) {
         this.userRepository = userRepository;
         this.favouriteTeamRepository = favouriteTeamRepository;
-        this.teamRepository = teamRepository;
         this.userSiteRepository = userSiteRepository;
-        this.tokenProvider = tokenProvider;
         this.blacklistTokenRepository = blacklistTokenRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.userService = userService;
     }
 
     @GetMapping("")
     @PreAuthorize("hasAuthority('ADMIN')")
     @JsonView(Views.Internal.class)
-    public List<User> users(@RequestHeader("Authorization") String jwtToken) {
-        Long id = tokenProvider.getUserIdFromJWT(jwtToken.substring(7));
+    public List<User> users() {
+        Long id = ((UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId();
         return userRepository.findByIdNot(id).orElseThrow(() ->
                 new ResourceNotFoundException("Nie ma użytkowników!")
         );
     }
 
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('SUPER_ADMIN')")
     @DeleteMapping("{id}")
-    public ResponseEntity<BaseResponse> deleteUser(@PathVariable("id") long id) {
+    public ResponseEntity<BaseResponse> deleteUser(@PathVariable("id")
+                                                   @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
+                                                           long id) {
         try {
             userRepository.deleteById(id);
             return ResponseEntity.ok(new BaseResponse(true, "Pomyślnie usunięto użytkownika"));
@@ -75,7 +85,10 @@ public class UserController {
     @GetMapping("{username}")
     @PreAuthorize("hasAuthority('ADMIN')")
     @JsonView(Views.Internal.class)
-    public User getUserProfile(@PathVariable("username") String username) {
+    public User getUserProfile(@PathVariable("username")
+                               @NotBlank(message = ValidationMessage.USERNAME_NOT_BLANK)
+                               @Size(min = 4, max = 20, message = ValidationMessage.USERNAME_SIZE)
+                                       String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Nie ma takiego użytkownika!"));
     }
@@ -83,32 +96,32 @@ public class UserController {
 
     @PutMapping("{username}/adminRole={role}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<BaseResponse> toggleAdminRole(@PathVariable("username") String username,
-                                                        @PathVariable("role") boolean role) {
+    public ResponseEntity<BaseResponse> toggleAdminRole(@PathVariable("username")
+                                                        @NotBlank(message = ValidationMessage.USERNAME_NOT_BLANK)
+                                                        @Size(min = 4, max = 20, message = ValidationMessage.USERNAME_SIZE)
+                                                                String username,
+                                                        @PathVariable("role") @NotNull(message = ValidationMessage.ROLE_NOT_BLANK) Boolean role) {
         AtomicReference<String> message = new AtomicReference<>("");
-        checkUserExistByUsernameAndOnSuccess(username, user -> {
-            Optional<Role> roleOptional = roleRepository.findByName(RoleName.ADMIN);
-            if (roleOptional.isPresent()) {
-                if (role) {
-                    user.addToRoles(roleOptional.get());
-                    message.set("Nadano prawa administracyjne!");
-                } else {
-                    user.removeFromRoles(roleOptional.get());
-                    message.set("Usunięto prawa administracyjne!");
-                }
-                userRepository.save(user);
+        User user = userService.checkUserExistByUsernameAndOnSuccess(username, userRepository, userFromDB -> {
+            Role adminRole = roleRepository.findByName(RoleName.ADMIN).orElseThrow(() -> new BadRequestException("Nie ma takiej roli użytkownika"));
+            if (role) {
+                userFromDB.addToRoles(adminRole);
+                message.set("Nadano prawa administracyjne!");
             } else {
-                throw new BadRequestException("Nie ma takiej roli, coś poszło nie tak");
+                userFromDB.removeFromRoles(adminRole);
+                message.set("Usunięto prawa administracyjne!");
             }
+            return userFromDB;
         });
+        userRepository.save(user);
         return ResponseEntity.ok(new BaseResponse(true, message.get()));
     }
 
 
     @GetMapping("me")
     @JsonView(Views.Public.class)
-    public User getMyProfile(@RequestHeader("Authorization") String jwtToken) {
-        Long id = tokenProvider.getUserIdFromJWT(jwtToken.substring(7));
+    public User getMyProfile() {
+        Long id = ((UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId();
         return userRepository.findById(id).orElseThrow(() ->
                 new ResourceNotFoundException("Nie ma takiego użytkownika")
         );
@@ -117,9 +130,9 @@ public class UserController {
     @DeleteMapping("me")
     @Transactional
     public ResponseEntity<BaseResponse> deleteMyAccount(@RequestHeader("Authorization") String jwtToken) {
-        Long id = tokenProvider.getUserIdFromJWT(jwtToken.substring(7));
+        UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         try {
-            userRepository.deleteById(id);
+            userRepository.deleteById(userPrincipal.getId());
             BlackListToken blackListToken = new BlackListToken();
             blackListToken.setToken(jwtToken.substring(7));
             blacklistTokenRepository.save(blackListToken);
@@ -129,240 +142,179 @@ public class UserController {
         }
     }
 
+
     @PutMapping("me")
     @Transactional
     @JsonView(Views.Public.class)
-    public User changeUserSettings(@RequestHeader("Authorization") String jwtToken, @RequestBody UserSettingsRequest userSettingsRequest) {
-        AtomicReference<User> newUser = new AtomicReference<>();
-        checkUserExistByTokenAndOnSuccess(jwtToken, (user -> {
-            checkIfExists(favouriteTeamRepository, user, new FavouriteTeam());
-            checkIfExists(userSiteRepository, user, new UserSite());
-            updateUserTeamsOrSites(userSettingsRequest.getFavouriteTeams(), favouriteTeamRepository, new FavouriteTeam(), user);
-            updateUserTeamsOrSites(userSettingsRequest.getChosenSites(), userSiteRepository, new UserSite(), user);
-            user.setNotification(userSettingsRequest.isNotifications());
-            user.setDarkMode(userSettingsRequest.isDarkMode());
-            user.setLanguage(userSettingsRequest.getLanguage());
-            user.setProposedNews(userSettingsRequest.isProposedNews());
-            userRepository.save(user);
-            newUser.set(user);
-        }));
-        return newUser.get();
+    public User changeUserSettings(@Valid @RequestBody UserSettingsRequest userSettingsRequest) {
+        User user = userService.checkUserExistByTokenAndOnSuccess(userRepository, userFromDB -> {
+            userService.deleteRepoValuesIfUserExists(favouriteTeamRepository, userFromDB, new FavouriteTeam());
+            userService.deleteRepoValuesIfUserExists(userSiteRepository, userFromDB, new UserSite());
+            userService.updateUserTeamsOrSites(userSettingsRequest.getFavouriteTeams(), favouriteTeamRepository, new FavouriteTeam(), userFromDB);
+            userService.updateUserTeamsOrSites(userSettingsRequest.getChosenSites(), userSiteRepository, new UserSite(), userFromDB);
+            userFromDB.setNotification(userSettingsRequest.isNotifications());
+            userFromDB.setDarkMode(userSettingsRequest.isDarkMode());
+            userFromDB.setLanguage(userSettingsRequest.getLanguage());
+            userFromDB.setProposedNews(userSettingsRequest.isProposedNews());
+            return userFromDB;
+        });
+        userRepository.save(user);
+        return user;
     }
 
     @PostMapping("me/email")
-    public ResponseEntity<BaseResponse> changeEmail(@RequestHeader("Authorization") String jwtToken, @RequestBody CredentialsChangeRequest credentialsChangeRequest) {
-        AtomicReference<BaseResponse> baseResponse = new AtomicReference<>();
-        checkUserExistByTokenAndOnSuccess(jwtToken, user -> {
-            if (credentialsChangeRequest.getOldCredential().equals(user.getEmail())) {
-                if (!userRepository.existsByEmail(credentialsChangeRequest.getNewCredential())) {
-                    user.setEmail(credentialsChangeRequest.getNewCredential());
-                    userRepository.save(user);
-                    baseResponse.set(new BaseResponse(true, "Poprawnie zmieniono adres mailowy!"));
-                } else {
-                    throw new BadRequestException("Na podany adres email jest już utworzone konto!");
-                }
-            } else {
-                throw new BadRequestException("Podany adres email jest nieprawidłowy!");
-            }
+    public ResponseEntity<BaseResponse> changeEmail(@Valid @RequestBody EmailChangeRequest emailChangeRequest) {
+        User user = userService.checkUserExistByTokenAndOnSuccess(userRepository, userFromDB -> {
+            if (emailChangeRequest.getOldCredential().equals(userFromDB.getEmail())) {
+                if (!userRepository.existsByEmail(emailChangeRequest.getNewCredential())) {
+                    userFromDB.setEmail(emailChangeRequest.getNewCredential());
+                    return userFromDB;
+                } else throw new BadRequestException("Na podany adres email jest już utworzone konto!");
+            } else throw new BadRequestException("Podany adres email jest nieprawidłowy!");
         });
-        return ResponseEntity.ok(baseResponse.get());
+        userRepository.save(user);
+        return ResponseEntity.ok(new BaseResponse(true, "Poprawnie zmieniono adres mailowy!"));
     }
 
     @PostMapping("me/username")
-    public ResponseEntity<BaseResponse> changeUsername(@RequestHeader("Authorization") String jwtToken, @RequestBody CredentialsChangeRequest credentialsChangeRequest) {
-        AtomicReference<BaseResponse> baseResponse = new AtomicReference<>();
-        checkUserExistByTokenAndOnSuccess(jwtToken, user -> {
-            if (credentialsChangeRequest.getOldCredential().equals(user.getUsername())) {
-                if (!userRepository.existsByUsername(credentialsChangeRequest.getNewCredential())) {
-                    user.setUsername(credentialsChangeRequest.getNewCredential());
-                    userRepository.save(user);
-                    baseResponse.set(new BaseResponse(true, "Poprawnie zmieniono nazwę użytkownika!"));
-                } else {
-                    throw new BadRequestException("Podana nazwa użytkownika jest już zajęta!");
-                }
-            } else {
-                throw new BadRequestException("Nieprawidłowa nazwa użytkownika!");
-            }
+    public ResponseEntity<BaseResponse> changeUsername(@Valid @RequestBody UsernameChangeRequest usernameChangeRequest) {
+        User user = userService.checkUserExistByTokenAndOnSuccess(userRepository, userFromDB -> {
+            if (usernameChangeRequest.getOldCredential().equals(userFromDB.getUsername())) {
+                if (!userRepository.existsByUsername(usernameChangeRequest.getNewCredential())) {
+                    userFromDB.setUsername(usernameChangeRequest.getNewCredential());
+                    return userFromDB;
+                } else throw new BadRequestException("Podana nazwa użytkownika jest już zajęta!");
+            } else throw new BadRequestException("Nieprawidłowa nazwa użytkownika!");
         });
-        return ResponseEntity.ok(baseResponse.get());
+        userRepository.save(user);
+        return ResponseEntity.ok(new BaseResponse(true, "Poprawnie zmieniono nazwę użytkownika!"));
     }
 
 
     @PostMapping("me/password")
-    public ResponseEntity<BaseResponse> changePassword(@RequestBody CredentialsChangeRequest credentialsChangeRequest) {
-
+    public ResponseEntity<BaseResponse> changePassword(@Valid @RequestBody PasswordChangeRequest passwordChangeRequest) {
         UserPrincipal userPrincipal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-        if (passwordEncoder.matches(credentialsChangeRequest.getOldCredential(), userPrincipal.getPassword()))
-        {
-            Optional<User> user = userRepository.findById(userPrincipal.getId());
-            if(user.isPresent()){
-                String newPassword = passwordEncoder.encode(credentialsChangeRequest.getNewCredential());
-                user.get().setPassword(newPassword);
-                userRepository.save(user.get());
-            }
+        if (passwordEncoder.matches(passwordChangeRequest.getOldCredential(), userPrincipal.getPassword())) {
+            User user = userRepository.findById(userPrincipal.getId()).map(userFromDb -> {
+                String newPassword = passwordEncoder.encode(passwordChangeRequest.getNewCredential());
+                userFromDb.setPassword(newPassword);
+                return userFromDb;
+            }).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiego użytkownika!"));
+            userRepository.save(user);
             return ResponseEntity.ok(new BaseResponse(true, "Poprawnie zmieniono hasło!"));
-        }
-        else{
+        } else {
             throw new BadRequestException("Podano błędne hasło");
         }
     }
 
 
-
     @PutMapping("me/notification={notification}")
-    public ResponseEntity<BaseResponse> toggleNotifications(@RequestHeader("Authorization") String jwtToken, @PathVariable("notification") boolean notification) {
-        AtomicReference<BaseResponse> baseResponse = new AtomicReference<>();
-        checkUserExistByTokenAndOnSuccess(jwtToken, (user) -> {
+    public ResponseEntity<BaseResponse> toggleNotifications(@PathVariable("notification")
+                                                            @NotNull(message = ValidationMessage.NOTIFICATION_NOT_BLANK)
+                                                                    Boolean notification) {
+        userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
             user.setNotification(notification);
             userRepository.save(user);
-            baseResponse.set(new BaseResponse(true, "Zmiana ustawienia powiadomień"));
+            return user;
         });
-        return ResponseEntity.ok(baseResponse.get());
+        return ResponseEntity.ok(new BaseResponse(true, "Zmiana ustawienia powiadomień"));
     }
 
     @PutMapping("me/proposedNews={proposedNews}")
-    public ResponseEntity<BaseResponse> toggleProposedNews(@RequestHeader("Authorization") String jwtToken, @PathVariable("proposedNews") boolean proposedNews) {
-        AtomicReference<BaseResponse> baseResponse = new AtomicReference<>();
-        checkUserExistByTokenAndOnSuccess(jwtToken, (user) -> {
+    public ResponseEntity<BaseResponse> toggleProposedNews(@PathVariable("proposedNews")
+                                                           @NotNull(message = ValidationMessage.PROPOSED_NEWS_NOT_BLANK)
+                                                                   Boolean proposedNews) {
+        userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
             user.setProposedNews(proposedNews);
             userRepository.save(user);
-            baseResponse.set(new BaseResponse(true, "Zmiana ustawienia polecanych newsów"));
+            return user;
         });
-        return ResponseEntity.ok(baseResponse.get());
+        return ResponseEntity.ok(new BaseResponse(true, "Zmiana ustawienia polecanych newsów"));
     }
 
     @PutMapping("me/language={language}")
-    public ResponseEntity<BaseResponse> changeLanguage(@RequestHeader("Authorization") String jwtToken, @PathVariable("language") Language language) {
-        AtomicReference<BaseResponse> baseResponse = new AtomicReference<>();
-        checkUserExistByTokenAndOnSuccess(jwtToken, (user) -> {
+    public ResponseEntity<BaseResponse> changeLanguage(@PathVariable("language")
+                                                       @NotNull(message = ValidationMessage.LANGUAGE_NOT_BLANK)
+                                                       @EnumNamePattern(regexp = "POLSKI|ANGIELSKI|WŁOSKI|FRANCUSKI|NIEMIECKI|HISZPAŃSKI",
+                                                               message = ValidationMessage.LANGUAGE_INVALID) Language language) {
+        userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
             user.setLanguage(language);
             userRepository.save(user);
-            baseResponse.set(new BaseResponse(true, "Zmiana języka"));
+            return user;
         });
-        return ResponseEntity.ok(baseResponse.get());
+        return ResponseEntity.ok(new BaseResponse(true, "Zmiana języka"));
     }
 
     @PutMapping("me/darkMode={darkMode}")
-    public ResponseEntity<BaseResponse> toggleDarkMode(@RequestHeader("Authorization") String jwtToken, @PathVariable("darkMode") boolean darkMode) {
-        AtomicReference<BaseResponse> baseResponse = new AtomicReference<>();
-        checkUserExistByTokenAndOnSuccess(jwtToken, (user) -> {
+    public ResponseEntity<BaseResponse> toggleDarkMode(@PathVariable("darkMode")
+                                                       @NotNull(message = ValidationMessage.DARK_MODE_NOT_BLANK)
+                                                               Boolean darkMode) {
+        userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
             user.setDarkMode(darkMode);
             userRepository.save(user);
-            baseResponse.set(new BaseResponse(true, "Zmiana motywu"));
+            return user;
         });
-        return ResponseEntity.ok(baseResponse.get());
+        return ResponseEntity.ok(new BaseResponse(true, "Zmiana motywu"));
     }
 
     @PutMapping("me/addTeam")
     @JsonView(Views.Public.class)
-    public User addTeam(@RequestHeader("Authorization") String jwtToken, @RequestBody FavouriteTeamRequest teamRequest) {
-        AtomicReference<User> newUser = new AtomicReference<>();
-        checkUserExistByTokenAndOnSuccess(jwtToken, (user) -> {
+    public User addTeam(@Valid @NotNull @RequestBody FavouriteTeamRequest teamRequest) {
+        return userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
             if (!favouriteTeamRepository.findByUserAndTeam(user, teamRequest.getTeam()).isPresent()) {
                 FavouriteTeam favouriteTeam = new FavouriteTeam();
                 favouriteTeam.setTeam(teamRequest.getTeam());
                 favouriteTeam.setUser(user);
                 favouriteTeamRepository.save(favouriteTeam);
-                newUser.set(user);
+                return user;
             } else {
                 throw new BadRequestException("Podana drużyna jest już dodana!");
             }
         });
-        return newUser.get();
     }
 
     @DeleteMapping("me/removeTeam")
     @JsonView(Views.Public.class)
     @Transactional
-    public User removeTeam(@RequestHeader("Authorization") String jwtToken, @RequestBody FavouriteTeamRequest favouriteTeamRequest) {
-        AtomicReference<User> newUser = new AtomicReference<>();
-        checkUserExistByTokenAndOnSuccess(jwtToken, (user) -> {
+    public User removeTeam(@Valid @RequestBody FavouriteTeamRequest favouriteTeamRequest) {
+        return userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
             try {
                 favouriteTeamRepository.deleteByUserAndTeam(user, favouriteTeamRequest.getTeam());
-                newUser.set(user);
+                return user;
             } catch (EmptyResultDataAccessException exception) {
                 throw new ResourceNotFoundException("Podany użytkownik nie ma polubionej danej drużyny!", exception);
             }
         });
-        return newUser.get();
     }
 
     @PutMapping("me/addSite")
     @JsonView(Views.Public.class)
-    public User addSite(@RequestHeader("Authorization") String jwtToken, @RequestBody UserSiteRequest userSiteRequest) {
-        AtomicReference<User> newUser = new AtomicReference<>();
-        checkUserExistByTokenAndOnSuccess(jwtToken, (user) -> {
+    public User addSite(@Valid @NotNull @RequestBody UserSiteRequest userSiteRequest) {
+        return userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
             if (!userSiteRepository.findByUserAndSite(user, userSiteRequest.getSite()).isPresent()) {
                 UserSite userSite = new UserSite();
                 userSite.setSite(userSiteRequest.getSite());
                 userSite.setUser(user);
                 userSiteRepository.save(userSite);
-                newUser.set(user);
+                return user;
             } else {
                 throw new BadRequestException("Podana strona jest już dodana!");
             }
         });
-        return newUser.get();
     }
 
 
     @DeleteMapping("me/removeSite")
     @JsonView(Views.Public.class)
     @Transactional
-    public User removeSite(@RequestHeader("Authorization") String jwtToken, @RequestBody UserSiteRequest userSiteRequest) {
-        AtomicReference<User> newUser = new AtomicReference<>();
-        checkUserExistByTokenAndOnSuccess(jwtToken, (user) -> {
+    public User removeSite(@Valid @NotNull @RequestBody UserSiteRequest userSiteRequest) {
+        return userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
             try {
                 userSiteRepository.deleteByUserAndSite(user, userSiteRequest.getSite());
-                newUser.set(user);
+                return user;
             } catch (EmptyResultDataAccessException exception) {
                 throw new ResourceNotFoundException("Podany użytkownik nie ma podanej strony!", exception);
             }
         });
-        return newUser.get();
     }
-
-
-    private void checkUserExistByUsernameAndOnSuccess(String username, OnFindedUserInterface onFindedUserInterface) {
-        Optional<User> userOptional = userRepository.findByUsername(username);
-        if (userOptional.isPresent()) {
-            onFindedUserInterface.onSuccess(userOptional.get());
-        } else {
-            throw new ResourceNotFoundException("Nie ma takiego użytkownika!");
-        }
-    }
-
-
-    private void checkUserExistByTokenAndOnSuccess(String token, OnFindedUserInterface onFindedUserInterface) {
-        Long id = tokenProvider.getUserIdFromJWT(token.substring(7));
-        Optional<User> userOptional = userRepository.findById(id);
-        if (userOptional.isPresent()) {
-            onFindedUserInterface.onSuccess(userOptional.get());
-        } else {
-            throw new ResourceNotFoundException("Nie ma takiego użytkownika!");
-        }
-    }
-
-
-    private <R extends UserSettingsRepository<T>, T> void checkIfExists(R repository, User user, T repositoryType) {
-        if (repository.findByUser(user).isPresent()) {
-            repository.deleteByUser(user);
-        }
-    }
-
-    private <R extends JpaRepository<O, Long>, T, O> void updateUserTeamsOrSites(List<T> objects, R repository, O objectType, User user) {
-        for (T object : objects) {
-            if (objectType instanceof FavouriteTeam) {
-                ((FavouriteTeam) objectType).setTeam((Team) object);
-                ((FavouriteTeam) objectType).setUser(user);
-            }
-            if (objectType instanceof UserSite) {
-                ((UserSite) objectType).setSite((Site) object);
-                ((UserSite) objectType).setUser(user);
-            }
-            repository.save(objectType);
-        }
-    }
-
 }

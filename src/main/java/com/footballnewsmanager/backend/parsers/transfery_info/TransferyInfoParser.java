@@ -82,6 +82,7 @@ public class TransferyInfoParser {
                     news.setImageUrl(imgUrl);
                     news.setSite(site.get());
                     news.setDate(localDate);
+                    System.out.println(news.getTitle());
                     newsRepository.save(news);
 
                     for (Tag tag :

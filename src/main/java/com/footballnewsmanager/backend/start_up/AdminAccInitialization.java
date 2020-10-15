@@ -37,16 +37,15 @@ public class AdminAccInitialization implements CommandLineRunner {
     }
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         if (!userRepository.existsByUsernameOrEmail(login, email)) {
             User user = new User(login, email, password);
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             Optional<Role> userRole = roleRepository.findByName(RoleName.ADMIN);
-
             if (userRole.isPresent()) {
                 user.setRoles(Collections.singleton(userRole.get()));
             } else {
-                Role role = new Role(RoleName.ADMIN);
+                Role role = new Role(RoleName.SUPER_ADMIN);
                 roleRepository.save(role);
                 user.setRoles(Collections.singleton(role));
             }

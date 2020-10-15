@@ -4,10 +4,10 @@ import javax.validation.constraints.NotBlank;
 
 public class LoginRequest {
 
-    @NotBlank(message = "Wymagany adres mailowy")
+    @NotBlank(message = ValidationMessage.DEFAULT_NOT_BLANK)
     private String usernameOrEmail;
 
-    @NotBlank(message = "Wymagane hasło")
+    @NotBlank(message = ValidationMessage.PASSWORD_NOT_BLANK)
     private String password;
 
     public String getUsernameOrEmail() {

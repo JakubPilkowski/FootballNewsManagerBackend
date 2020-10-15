@@ -2,9 +2,13 @@ package com.footballnewsmanager.backend.models;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -17,23 +21,27 @@ import java.util.Set;
 public class News {
 
     @Id
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long siteId;
 
     @Id
+    @NotNull(message = ValidationMessage.ID_NOT_NULL)
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long id;
 
 
-    @NotBlank
-    @Size(min=4, max=100)
+    @NotBlank(message = ValidationMessage.NEWS_TITLE_NOT_BLANK)
+    @Size(min=4, max=250, message = ValidationMessage.NEWS_TITLE_SIZE)
     private String title;
 
-    @NotBlank
+    @NotBlank(message = ValidationMessage.NEWS_URL_NOT_BLANK)
     private String newsUrl;
 
-    @NotBlank
+    @NotBlank(message = ValidationMessage.IMAGE_NOT_BLANK)
     private String imageUrl;
 
-    @NotBlank
+    @NotNull(message = ValidationMessage.DATE_NOT_BLANK)
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate date;
 
     @ManyToOne
@@ -43,24 +51,15 @@ public class News {
     @OneToMany(mappedBy = "news", cascade = CascadeType.ALL,orphanRemoval = true)
     private Set<NewsTag> tags = new HashSet<>();
 
-
-    public List<TeamNews> getTeamNews() {
-        return teamNews;
-    }
-
-    public void setTeamNews(List<TeamNews> teamNews) {
-        this.teamNews = teamNews;
-    }
-
     @OneToMany(mappedBy = "news", cascade = CascadeType.ALL,orphanRemoval = true)
     @JsonIgnore()
     private List<TeamNews> teamNews = new ArrayList<>();
 
-
+    @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
+    @Min(value = 0, message = ValidationMessage.CLICKS_LESS_THAN_ZERO)
     private int clicks =0;
 
     private boolean highlighted= false;
-
 
     public String getTitle() {
         return title;
@@ -110,13 +109,13 @@ public class News {
         this.site = site;
     }
 
-//    public Set<Tag> getTags() {
-//        return tags;
-//    }
-//
-//    public void setTags(Set<Tag> tags) {
-//        this.tags = tags;
-//    }
+    public List<TeamNews> getTeamNews() {
+        return teamNews;
+    }
+
+    public void setTeamNews(List<TeamNews> teamNews) {
+        this.teamNews = teamNews;
+    }
 
     public String getImageUrl() {
         return imageUrl;

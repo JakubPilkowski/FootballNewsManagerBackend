@@ -1,25 +1,30 @@
 package com.footballnewsmanager.backend.models;
 
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
+
 import javax.persistence.*;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.Date;
 
 @Entity
 @Table(name = "password_reset_tokens")
 public class PasswordResetToken {
 
-    private static final int EXPIRATION = 60 * 24;
-
     @Id
     @GeneratedValue()
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long id;
 
+    @NotBlank(message = ValidationMessage.TOKEN_NOT_BLANK)
     private String token;
 
     @OneToOne()
     private User user;
 
+    @NotBlank(message = ValidationMessage.DATE_NOT_BLANK)
     private Date expiryDate;
-
 
     public Long getId() {
         return id;

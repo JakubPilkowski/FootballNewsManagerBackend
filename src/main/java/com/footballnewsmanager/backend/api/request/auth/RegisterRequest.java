@@ -1,25 +1,23 @@
 package com.footballnewsmanager.backend.api.request.auth;
 
-import org.springframework.validation.annotation.Validated;
-
-import javax.validation.Valid;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
+
 public class RegisterRequest {
 
-    @NotBlank(message = "Login wymagany")
-    @Size(min = 4, max = 20, message = "Login musi się składać z od 3 do 20 znaków")
+    @NotBlank(message = ValidationMessage.USERNAME_NOT_BLANK)
+    @Size(min = 4, max = 20, message = ValidationMessage.USERNAME_SIZE)
     private String username;
 
-    @NotBlank(message = "Email wymagany")
-    @Size(max = 40, message = "Email nie może składać się z więcej niż 40 znaków")
-    @Email(message = "Niepoprawny mail")
+    @NotBlank(message = ValidationMessage.EMAIL_NOT_BLANK)
+    @Size(max = 40, message = ValidationMessage.EMAIL_SIZE)
+    @Email(message = ValidationMessage.EMAIL_VALID)
     private String email;
 
-    @NotBlank(message = "Hasło wymagane")
-    @Size(min = 8, max = 30, message = "Hasło musi zawierać od 8 do 30 znaków")
+    @NotBlank(message = ValidationMessage.PASSWORD_NOT_BLANK)
+    @Size(min = 8, max = 30, message = ValidationMessage.PASSWORD_SIZE)
     private String password;
 
     public String getUsername() {

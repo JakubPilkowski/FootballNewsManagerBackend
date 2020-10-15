@@ -1,7 +1,13 @@
 package com.footballnewsmanager.backend.models;
 
 
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
+import org.springframework.format.annotation.DateTimeFormat;
+
 import javax.persistence.*;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
 
 @Entity
@@ -10,10 +16,15 @@ public class SiteClick {
 
     @Id
     @GeneratedValue()
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long id;
 
+    @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
+    @Min(value = 0, message = ValidationMessage.CLICKS_LESS_THAN_ZERO)
     private int clicks = 0;
 
+    @NotNull(message = ValidationMessage.DATE_NOT_BLANK)
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate date;
 
     @ManyToOne()

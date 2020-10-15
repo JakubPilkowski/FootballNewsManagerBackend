@@ -1,15 +1,13 @@
 package com.footballnewsmanager.backend.config;
 
 
-import com.footballnewsmanager.backend.auth.CustomUserDetailsService;
+import com.footballnewsmanager.backend.services.CustomUserDetailsService;
 import com.footballnewsmanager.backend.auth.JwtAuthenticationEntryPoint;
 import com.footballnewsmanager.backend.auth.JwtAuthenticationFilter;
 import com.footballnewsmanager.backend.auth.JwtTokenProvider;
 import com.footballnewsmanager.backend.repositories.BlacklistTokenRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -21,11 +19,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import javax.persistence.OneToMany;
 
 @Configuration
 @EnableWebSecurity
@@ -53,17 +48,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         this.blacklistTokenRepository = blacklistTokenRepository;
     }
 
-//    @Bean
-//    public MethodValidationPostProcessor methodValidationPostProcessor() {
-//        return new MethodValidationPostProcessor();
-//    }
-
-
-//    @Bean
-//    public JavaMailSender mailSender(){
-//        return new JavaMailSenderImpl();
-//    }
-
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(){
         return new JwtAuthenticationFilter(jwtTokenProvider, customUserDetailsService, blacklistTokenRepository);
@@ -73,7 +57,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(customUserDetailsService).passwordEncoder(passwordEncoder());
     }
-
 
     @Bean(BeanIds.AUTHENTICATION_MANAGER)
     @Override

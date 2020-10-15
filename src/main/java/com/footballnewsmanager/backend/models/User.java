@@ -3,13 +3,13 @@ package com.footballnewsmanager.backend.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
+import com.footballnewsmanager.backend.validators.EnumNamePattern;
 import com.footballnewsmanager.backend.views.Views;
 import org.hibernate.annotations.NaturalId;
 
 import javax.persistence.*;
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -29,21 +29,22 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long id;
 
 
-    @NotBlank(message = "Login jest wymagany")
-    @Size(max = 20)
+    @NotBlank(message = ValidationMessage.USERNAME_NOT_BLANK)
+    @Size(min=4, max = 20, message = ValidationMessage.USERNAME_SIZE)
     private String username;
 
     @NaturalId(mutable = true)
-    @NotBlank(message = "Adres mailowy jest wymagany")
-    @Size(max = 40)
-    @Email
-//    @JsonIgnore
+    @NotBlank(message = ValidationMessage.EMAIL_NOT_BLANK)
+    @Size(max = 40, message = ValidationMessage.EMAIL_SIZE)
+    @Email(message = ValidationMessage.EMAIL_VALID)
+    @JsonIgnore
     private String email;
 
-    @NotBlank(message = "Hasło jest wymagane")
+    @NotBlank(message = ValidationMessage.PASSWORD_SIZE)
     @Size(max = 60)
     @JsonIgnore
     private String password;
@@ -53,11 +54,6 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserSite> userSites = new ArrayList<>();
-
-
-    //w momencie dodawania storage
-//    @NotBlank
-//    private String imageUrl;
 
 
     @ManyToMany(fetch = FetchType.LAZY)
@@ -70,6 +66,8 @@ public class User {
     private boolean darkMode = true;
 
     @Enumerated(EnumType.STRING)
+    @NotNull(message = ValidationMessage.LANGUAGE_NOT_BLANK)
+    @EnumNamePattern(regexp = "POLSKI|ANGIELSKI|WŁOSKI|FRANCUSKI|NIEMIECKI|HISZPAŃSKI", message = ValidationMessage.LANGUAGE_INVALID)
     private Language language = Language.POLSKI;
 
     private boolean notification = true;
@@ -85,6 +83,13 @@ public class User {
         this.username = username;
         this.email = email;
         this.password = password;
+    }
+
+    public void setDefaultUserSettings(){
+        setDarkMode(true);
+        setNotification(true);
+        setLanguage(Language.POLSKI);
+        setProposedNews(true);
     }
 
     public Long getId() {

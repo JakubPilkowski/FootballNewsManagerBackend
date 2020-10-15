@@ -4,10 +4,14 @@ package com.footballnewsmanager.backend.models;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
+import com.footballnewsmanager.backend.validators.EnumNamePattern;
 import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.*;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,24 +23,24 @@ public class League {
 
     @Id
     @GeneratedValue()
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long id;
 
 
-    @NotBlank
+    @NotBlank(message = ValidationMessage.API_SPORT_ID_NOT_BLANK)
     @JsonIgnore
     private int apisportid;
 
-    @NotBlank
-    @Size(min = 5)
-    @Size(max = 50)
+    @NotBlank(message = ValidationMessage.LEAGUE_NAME_NOT_BLANK)
+    @Size(min = 5, max = 50, message = ValidationMessage.LEAGUE_NAME_SIZE)
     private String name;
 
-    @NotBlank
+    @NotBlank(message = ValidationMessage.LOGO_NOT_BLANK)
     private String logoUrl;
 
-
     @Enumerated(EnumType.STRING)
-    @NotBlank
+    @NotBlank(message = ValidationMessage.LEAGUE_TYPE_NOT_BLANK)
+    @EnumNamePattern(regexp = "LIGA|REPREZENTACJA", message = ValidationMessage.LEAGUE_TYPE_INVALID)
     private LeagueType type;
 
     @OneToMany(mappedBy = "league")

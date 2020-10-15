@@ -2,9 +2,12 @@ package com.footballnewsmanager.backend.models;
 
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 
 import javax.persistence.*;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,9 +21,10 @@ public class Tag {
 
     @Id
     @GeneratedValue()
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long id;
 
-    @NotBlank
+    @NotBlank(message = ValidationMessage.TAG_NAME_NOT_BLANK)
     private String name;
 
     @OneToMany(mappedBy = "tag", cascade = CascadeType.ALL,orphanRemoval = true)

@@ -13,10 +13,10 @@ import com.footballnewsmanager.backend.repositories.LeagueRepository;
 import com.footballnewsmanager.backend.repositories.MarkerRepository;
 import com.footballnewsmanager.backend.repositories.TeamRepository;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 public class LeaguesHelper {
@@ -137,6 +137,9 @@ public class LeaguesHelper {
             case "Paris Saint Germain":
                 markersList.add(addMarker("PSG"));
                 break;
+            case "WSG Wattens":
+                markersList.add(addMarker("Tirol"));
+                break;
             case "AS Roma":
                 markersList.add(addMarker("Roma"));
                 break;
@@ -206,8 +209,8 @@ public class LeaguesHelper {
             case "Kryształowy Pałac":
                 repairedValue = "Crystal Palace";
                 break;
-            case "Zespół Wiener Linien":
-                repairedValue = "Team Wiener Linien";
+            case "Szybki Wiedeń":
+                repairedValue = "Rapid Wiedeń";
                 break;
             case "Wcierać":
                 repairedValue = "Rubin Kazań";

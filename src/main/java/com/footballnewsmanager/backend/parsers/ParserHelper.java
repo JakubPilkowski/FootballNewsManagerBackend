@@ -29,26 +29,6 @@ public class ParserHelper {
                 }
             }
         }
-
-//        for (Team team : teams) {
-//            Set<Marker> markerList = team.getMarkers();
-//            for (Marker marker :
-//                    markerList) {
-//                for (Tag tag : tagSet) {
-//                    if (tag.getName().equals(marker.getName())) {
-//                        Set<Team> teamSet = marker.getTeams();
-//                        for (Team teamFromMarker : teamSet) {
-//                            if (!teamNewsRepository.existsByTeamAndNews(teamFromMarker, news)) {
-//                                TeamNews teamNews = new TeamNews();
-//                                teamNews.setNews(news);
-//                                teamNews.setTeam(teamFromMarker);
-//                                teamNewsRepository.save(teamNews);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
     }
 
     public static Set<Tag> getTags(List<Marker> markers, String article, TagRepository tagRepository) {

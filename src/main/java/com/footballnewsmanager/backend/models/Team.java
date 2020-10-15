@@ -2,10 +2,13 @@ package com.footballnewsmanager.backend.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.*;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,20 +16,19 @@ import java.util.Set;
 
 @Entity
 @Table(name = "teams")
-//@JsonFilter("teamFilter")
 @JsonView(Views.Public.class)
 public class Team {
 
     @Id
     @GeneratedValue()
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long id;
 
-    @NotBlank
-    @Size(min=4, max = 50)
+    @NotBlank(message = ValidationMessage.TEAM_NAME_NOT_BLANK)
+    @Size(min=3, max = 50, message = ValidationMessage.TEAM_NAME_SIZE)
     private String name;
 
-    //prawa autorskie do zdjęć, zobaczymy czy zostanie to pole
-    @NotBlank
+    @NotBlank(message = ValidationMessage.LOGO_NOT_BLANK)
     private String logoUrl;
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -37,7 +39,6 @@ public class Team {
     @JsonView(Views.Internal.class)
     private Set<Marker> markers;
 
-
     @OneToMany(mappedBy = "team")
     @JsonIgnore
     private List<TeamNews> teamNews= new ArrayList<>();
@@ -46,11 +47,9 @@ public class Team {
     @JsonView(Views.Internal.class)
     private League league;
 
-
     @OneToMany(mappedBy = "team")
     @JsonIgnore
     private List<FavouriteTeam> userTeams = new ArrayList<>();
-
 
     public Long getId() {
         return id;
