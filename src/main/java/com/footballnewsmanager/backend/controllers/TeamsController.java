@@ -12,18 +12,23 @@ import com.footballnewsmanager.backend.repositories.LeagueRepository;
 import com.footballnewsmanager.backend.repositories.TeamRepository;
 import com.footballnewsmanager.backend.repositories.MarkerRepository;
 import com.footballnewsmanager.backend.views.Views;
+import org.hibernate.validator.constraints.Range;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import java.util.*;
 
 @RestController
 @RequestMapping("/teams")
+@Validated
 public class TeamsController {
 
 
@@ -41,43 +46,44 @@ public class TeamsController {
 
     @GetMapping(value = "", params = {"page"})
     @JsonView(Views.Internal.class)
-    public ResponseEntity<TeamsResponse> teams(@RequestParam("page") int page) {
+    public ResponseEntity<TeamsResponse> teams(@RequestParam(value = "page", defaultValue = "0") @Min(value = 0) int page) {
         Pageable pageable = PageRequest.of(page, 20, Sort.by(Sort.Direction.ASC, "name"));
         Page<Team> teams = teamRepository.findAll(pageable);
-        TeamsResponse teamsResponse = new TeamsResponse(true, "Drużyny", teams.getContent());
-        return ResponseEntity.ok().body(teamsResponse);
+        if(page+1 > teams.getTotalPages()) throw new ResourceNotFoundException("Nie ma już więcej wyników");
+        return ResponseEntity.ok().body(new TeamsResponse(true, "Drużyny", teams.getContent()));
     }
 
     @GetMapping(value = "league={id}", params = {"page"})
     @JsonView(Views.Internal.class)
-    public ResponseEntity<TeamsResponse> teamsByLeague(@RequestParam(value = "page", defaultValue = "1") int page,
-                                                       @PathVariable("id") Long id){
+    public ResponseEntity<TeamsResponse> teamsByLeague(@RequestParam(value = "page", defaultValue = "0") @Min(value = 0) int page,
+                                                       @PathVariable("id") @Min(value = 1) Long id){
         Pageable pageable = PageRequest.of(page, 20, Sort.by(Sort.Direction.ASC, "name"));
         League league = leagueRepository.findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Nie ma takiej ligi"));
         Page<Team> teams = teamRepository.findByLeague(league, pageable)
                 .orElseThrow(()-> new ResourceNotFoundException("Nie ma drużyn dla podanej ligi"));
+        if(page+1 > teams.getTotalPages()) throw new ResourceNotFoundException("Nie ma już więcej wyników");
         return ResponseEntity.ok(new TeamsResponse(true, "Drużyny dla: "+league.getName(), teams.getContent()));
     }
 
     @GetMapping("{id}")
     @JsonView(Views.Internal.class)
-    public ResponseEntity<TeamsResponse> teamById(@PathVariable("id") Long id){
+    public ResponseEntity<TeamsResponse> teamById(@PathVariable("id") @Min(value = 1) Long id){
         Team team  = teamRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Nie ma takiej drużyny!"));
         return ResponseEntity.ok(new TeamsResponse(true, "Drużyna", Collections.singletonList(team)));
     }
 
 
-    @GetMapping("hot")
+    @GetMapping(value = "hot", params = {"page"})
     @JsonView(Views.Public.class)
-    public ResponseEntity<TeamsResponse> hotTeams(){
-        Pageable pageable = PageRequest.of(0,10, Sort.by(Sort.Direction.DESC, "popularity"));
+    public ResponseEntity<TeamsResponse> hotTeams(@RequestParam(value = "page", defaultValue = "5") @NotNull @Range(min = 5, max = 10) int page){
+        Pageable pageable = PageRequest.of(0,page, Sort.by(Sort.Direction.DESC, "popularity"));
         Page<Team> teams = teamRepository.findAll(pageable);
         return ResponseEntity.ok(new TeamsResponse(true, "Popularne drużyny", teams.getContent()));
     }
 
     @GetMapping("addClick/{id}")
-    public ResponseEntity<BaseResponse> addClickToTeam(@PathVariable("id") Long id){
+    public ResponseEntity<BaseResponse> addClickToTeam(@PathVariable("id") @Min(value = 1) Long id){
         Team team = teamRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Nie ma takiej drużyny"));
         team.setClicks(team.getClicks()+1);
         team.measurePopularity();
@@ -85,10 +91,12 @@ public class TeamsController {
         return ResponseEntity.ok(new BaseResponse(true, "Dodano kliknięcie"));
     }
 
-    @GetMapping("query={query}")
-    public ResponseEntity<TeamsResponse> getTeamsByQuery(@PathVariable("query") String query){
-        Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "popularity"));
-        Page<Team> pages = teamRepository.findByNameContains(query, pageable).orElseThrow(()->new ResourceNotFoundException("Dla podanego hasła nie ma żadnej drużyny"));
+    @GetMapping(value = "query={query}", params = {"page"})
+    public ResponseEntity<TeamsResponse> getTeamsByQuery(@RequestParam(value = "page", defaultValue = "0") @Min(value = 0) int page, @PathVariable("query") @NotNull() String query){
+        Pageable pageable = PageRequest.of(page, 20, Sort.by(Sort.Direction.DESC, "popularity"));
+        Page<Team> pages = teamRepository.findByNameContainsIgnoreCase(query, pageable).orElseThrow(()->new ResourceNotFoundException("Dla podanego hasła nie ma żadnej drużyny"));
+        if(page +1 >pages.getTotalPages())
+            throw new ResourceNotFoundException("Nie ma już więcej wyników");
         if(pages.getTotalElements()==0)
             throw new ResourceNotFoundException("Dla podanej frazy nie ma żadnej drużyny");
         return ResponseEntity.ok(new TeamsResponse(true, "Znalezione drużyny", pages.getContent()));
