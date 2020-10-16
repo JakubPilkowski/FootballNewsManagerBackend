@@ -3,15 +3,10 @@ package com.footballnewsmanager.backend.controllers;
 
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 import com.footballnewsmanager.backend.api.response.BaseResponse;
-import com.footballnewsmanager.backend.api.response.TeamsResponse;
 import com.footballnewsmanager.backend.api.response.sites.SiteResponse;
-import com.footballnewsmanager.backend.api.response.sites.SiteWithClicks;
 import com.footballnewsmanager.backend.api.response.sites.SitesResponse;
 import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.models.Site;
-import com.footballnewsmanager.backend.models.SiteClick;
-import com.footballnewsmanager.backend.models.Team;
-import com.footballnewsmanager.backend.repositories.SiteClickRepository;
 import com.footballnewsmanager.backend.repositories.SiteRepository;
 import com.footballnewsmanager.backend.services.BaseService;
 import com.footballnewsmanager.backend.services.PaginationService;
@@ -24,13 +19,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import java.time.LocalDate;
-import java.time.temporal.WeekFields;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 @RestController
 @RequestMapping("/sites")
@@ -38,12 +28,10 @@ import java.util.concurrent.atomic.AtomicReference;
 public class SitesController {
 
     private final SiteRepository siteRepository;
-    private final SiteClickRepository siteClickRepository;
     private final BaseService baseService;
 
-    public SitesController(SiteRepository siteRepository, SiteClickRepository siteClickRepository, BaseService baseService) {
+    public SitesController(SiteRepository siteRepository, BaseService baseService) {
         this.siteRepository = siteRepository;
-        this.siteClickRepository = siteClickRepository;
         this.baseService = baseService;
     }
 

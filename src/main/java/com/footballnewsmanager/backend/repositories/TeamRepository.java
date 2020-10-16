@@ -14,6 +14,5 @@ public interface TeamRepository extends PagingAndSortingRepository<Team, Long>{
 
     Optional<Page<Team>> findByLeague(League league, Pageable pageable);
 
-
     Optional<Page<Team>> findByNameContainsIgnoreCase(String query, Pageable pageable);
 }

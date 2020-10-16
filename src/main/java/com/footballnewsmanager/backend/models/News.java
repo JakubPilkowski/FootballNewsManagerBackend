@@ -2,7 +2,10 @@ package com.footballnewsmanager.backend.models;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
+import com.footballnewsmanager.backend.helpers.Multipliers;
+import com.footballnewsmanager.backend.views.Views;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
@@ -18,6 +21,7 @@ import java.util.Set;
 
 @Entity
 @IdClass(NewsId.class)
+@JsonView(Views.Public.class)
 public class News {
 
     @Id
@@ -31,7 +35,7 @@ public class News {
 
 
     @NotBlank(message = ValidationMessage.NEWS_TITLE_NOT_BLANK)
-    @Size(min=4, max=250, message = ValidationMessage.NEWS_TITLE_SIZE)
+    @Size(min = 4, max = 250, message = ValidationMessage.NEWS_TITLE_SIZE)
     private String title;
 
     @NotBlank(message = ValidationMessage.NEWS_URL_NOT_BLANK)
@@ -48,18 +52,38 @@ public class News {
     @JoinColumn(name = "site")
     private Site site;
 
-    @OneToMany(mappedBy = "news", cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToMany(mappedBy = "news", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<NewsTag> tags = new HashSet<>();
 
-    @OneToMany(mappedBy = "news", cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToMany(mappedBy = "news", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore()
     private List<TeamNews> teamNews = new ArrayList<>();
 
+    @OneToMany(mappedBy = "news", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<UserNewsLike> userLikes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "news", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<UserNewsDislike> userDislikes = new ArrayList<>();
+
     @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
     @Min(value = 0, message = ValidationMessage.CLICKS_LESS_THAN_ZERO)
-    private int clicks =0;
+    private double popularity = 0L;
 
-    private boolean highlighted= false;
+    @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
+    @Min(value = 0, message = ValidationMessage.CLICKS_LESS_THAN_ZERO)
+    private Long clicks = 0L;
+
+    @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
+    @Min(value = 0, message = ValidationMessage.CLICKS_LESS_THAN_ZERO)
+    private Long likes = 0L;
+
+    @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
+    @Min(value = 0, message = ValidationMessage.CLICKS_LESS_THAN_ZERO)
+    private Long dislikes = 0L;
+
+    private boolean highlighted = false;
 
     public String getTitle() {
         return title;
@@ -85,11 +109,11 @@ public class News {
         this.date = date;
     }
 
-    public int getClicks() {
+    public Long getClicks() {
         return clicks;
     }
 
-    public void setClicks(int clicks) {
+    public void setClicks(Long clicks) {
         this.clicks = clicks;
     }
 
@@ -147,5 +171,50 @@ public class News {
 
     public void setTags(Set<NewsTag> tags) {
         this.tags = tags;
+    }
+
+    public List<UserNewsLike> getUserLikes() {
+        return userLikes;
+    }
+
+    public void setUserLikes(List<UserNewsLike> userLikes) {
+        this.userLikes = userLikes;
+    }
+
+    public double getPopularity() {
+        return popularity;
+    }
+
+    public void setPopularity(double popularity) {
+        this.popularity = popularity;
+    }
+
+    public Long getLikes() {
+        return likes;
+    }
+
+    public void setLikes(Long likes) {
+        this.likes = likes;
+    }
+
+    public void measurePopularity(){
+        setPopularity(getClicks()* Multipliers.CLICK_MULTIPLIER
+                +getLikes()* Multipliers.LIKED - getDislikes()*Multipliers.LIKED);
+    }
+
+    public List<UserNewsDislike> getUserDislikes() {
+        return userDislikes;
+    }
+
+    public void setUserDislikes(List<UserNewsDislike> userDislikes) {
+        this.userDislikes = userDislikes;
+    }
+
+    public Long getDislikes() {
+        return dislikes;
+    }
+
+    public void setDislikes(Long dislikes) {
+        this.dislikes = dislikes;
     }
 }
