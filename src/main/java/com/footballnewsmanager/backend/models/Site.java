@@ -3,14 +3,12 @@ package com.footballnewsmanager.backend.models;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
+import com.footballnewsmanager.backend.helpers.Multipliers;
 import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.*;
-import javax.validation.Valid;
-import javax.validation.Validation;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,13 +37,19 @@ public class Site {
     @JsonView(Views.Internal.class)
     private boolean highlighted = false;
 
+    private double popularity = 0;
+
+    private Long clicks = 0L;
+
+    private Long newsCount = 0L;
+
+    private Long chosenAmount = 0L;
+
+
     @OneToMany(mappedBy = "site", fetch = FetchType.LAZY)
     @JsonBackReference(value = "news")
     private List<News> news = new ArrayList<>();
 
-    @OneToMany(mappedBy = "site")
-    @JsonBackReference(value = "clicks")
-    private List<SiteClick> clicks = new ArrayList<>();
 
     @OneToMany(mappedBy = "site")
     @JsonBackReference(value = "userSites")
@@ -108,11 +112,41 @@ public class Site {
         this.news = aNews;
     }
 
-    public List<SiteClick> getClicks() {
+    public Long getClicks() {
         return clicks;
     }
 
-    public void setClicks(List<SiteClick> clicks) {
+    public void setClicks(Long clicks) {
         this.clicks = clicks;
+    }
+
+    public double getPopularity() {
+        return popularity;
+    }
+
+    public void setPopularity(double popularity) {
+        this.popularity = popularity;
+    }
+
+    public Long getNewsCount() {
+        return newsCount;
+    }
+
+    public void setNewsCount(Long newsCount) {
+        this.newsCount = newsCount;
+    }
+
+    public Long getChosenAmount() {
+        return chosenAmount;
+    }
+
+    public void setChosenAmount(Long chosenAmount) {
+        this.chosenAmount = chosenAmount;
+    }
+
+    public void measurePopularity(){
+        setPopularity(getClicks()* Multipliers.CLICK_MULTIPLIER
+                +getNewsCount()* Multipliers.NEWS_MULTIPLIER
+                +getChosenAmount()* Multipliers.CHOSEN_BY_MULTIPLIER);
     }
 }

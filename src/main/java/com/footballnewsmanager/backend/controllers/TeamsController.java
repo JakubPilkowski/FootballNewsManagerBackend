@@ -74,10 +74,10 @@ public class TeamsController {
     }
 
 
-    @GetMapping(value = "hot", params = {"page"})
+    @GetMapping(value = "hot", params = {"count"})
     @JsonView(Views.Public.class)
-    public ResponseEntity<TeamsResponse> hotTeams(@RequestParam(value = "page", defaultValue = "5") @NotNull @Range(min = 5, max = 10) int page){
-        Pageable pageable = PageRequest.of(0,page, Sort.by(Sort.Direction.DESC, "popularity"));
+    public ResponseEntity<TeamsResponse> hotTeams(@RequestParam(value = "count", defaultValue = "5") @NotNull @Range(min = 5, max = 10) int count){
+        Pageable pageable = PageRequest.of(0,count, Sort.by(Sort.Direction.DESC, "popularity"));
         Page<Team> teams = teamRepository.findAll(pageable);
         return ResponseEntity.ok(new TeamsResponse(true, "Popularne drużyny", teams.getContent()));
     }

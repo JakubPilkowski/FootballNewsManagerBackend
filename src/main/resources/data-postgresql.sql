@@ -3,9 +3,9 @@ INSERT INTO public.roles (id, name) VALUES
 (1, 'USER'), (2, 'ADMIN'), (3, 'SUPER_ADMIN')
 ON CONFLICT DO NOTHING;
 -- Strony
-INSERT INTO public.sites(id, description, highlighted, logo_url, name) VALUES
-(1,'Strona piłkarska poświęcona newsom na temat ligi włoskiej',false,'https://www.football-italia.net/sites/all/themes/italia/logo2.png', 'Football Italia'),
-(2, 'Strona oferująca dużą bazę informacji na temat najnowszych transferów',false,'https://transfery.info/img/logo/logo.png', 'Transfery.info')
+INSERT INTO public.sites(id, description, highlighted,popularity,clicks, news_count, chosen_amount, logo_url, name) VALUES
+(1, 'Strona piłkarska poświęcona newsom na temat ligi włoskiej',false, 0,0,0,0,'https://www.football-italia.net/sites/all/themes/italia/logo2.png', 'Football Italia'),
+(2, 'Strona oferująca dużą bazę informacji na temat najnowszych transferów',false,0,0,0,0,'https://transfery.info/img/logo/logo.png', 'Transfery.info')
 ON CONFLICT DO NOTHING;
 -- Ligi
 INSERT INTO public.leagues(id,apisportid, name, logo_url, type) VALUES

@@ -1,19 +1,20 @@
 package com.footballnewsmanager.backend.api.response.sites;
 
 import com.footballnewsmanager.backend.api.response.BaseResponse;
+import com.footballnewsmanager.backend.models.Site;
 
-import java.util.Set;
+import java.util.List;
 
 public class SitesResponse extends BaseResponse {
 
-    private Set<SiteWithClicks> sites;
+    private List<Site> sites;
 
-    public SitesResponse(boolean success, String message, Set<SiteWithClicks> sites) {
+    public SitesResponse(boolean success, String message, List<Site> sites) {
         super(success, message);
         this.sites = sites;
     }
 
-    public Set<SiteWithClicks> getSites() {
+    public List<Site> getSites() {
         return sites;
     }
 }

@@ -46,10 +46,11 @@ public class UserController {
     private final BlacklistTokenRepository blacklistTokenRepository;
     private final RoleRepository roleRepository;
     private final TeamRepository teamRepository;
+    private final SiteRepository siteRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserService userService;
 
-    public UserController(UserRepository userRepository, FavouriteTeamRepository favouriteTeamRepository, TeamRepository teamRepository, UserSiteRepository userSiteRepository, JwtTokenProvider tokenProvider, BlacklistTokenRepository blacklistTokenRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, UserService userService, SiteRepository siteRepository, TeamRepository teamRepository1) {
+    public UserController(UserRepository userRepository, FavouriteTeamRepository favouriteTeamRepository, TeamRepository teamRepository, UserSiteRepository userSiteRepository, JwtTokenProvider tokenProvider, BlacklistTokenRepository blacklistTokenRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, UserService userService, SiteRepository siteRepository) {
         this.userRepository = userRepository;
         this.favouriteTeamRepository = favouriteTeamRepository;
         this.userSiteRepository = userSiteRepository;
@@ -57,7 +58,8 @@ public class UserController {
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.userService = userService;
-        this.teamRepository = teamRepository1;
+        this.teamRepository = teamRepository;
+        this.siteRepository = siteRepository;
     }
 
     @GetMapping("")
@@ -295,14 +297,18 @@ public class UserController {
         });
     }
 
-    @PutMapping("me/addSite")
+    @PutMapping("me/addSite/{id}")
     @JsonView(Views.Public.class)
-    public User addSite(@Valid @NotNull @RequestBody UserSiteRequest userSiteRequest) {
+    public User addSite(@PathVariable("id") @NotNull @Min(value = 0) Long id) {
         return userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
-            if (!userSiteRepository.findByUserAndSite(user, userSiteRequest.getSite()).isPresent()) {
+            Site site = siteRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej strony!"));
+            if (!userSiteRepository.findByUserAndSite(user, site).isPresent()) {
                 UserSite userSite = new UserSite();
-                userSite.setSite(userSiteRequest.getSite());
+                userSite.setSite(site);
                 userSite.setUser(user);
+                site.setChosenAmount(site.getChosenAmount()+1);
+                site.measurePopularity();
+                siteRepository.save(site);
                 userSiteRepository.save(userSite);
                 return user;
             } else {
@@ -312,13 +318,17 @@ public class UserController {
     }
 
 
-    @DeleteMapping("me/removeSite")
+    @DeleteMapping("me/removeSite/{id}")
     @JsonView(Views.Public.class)
     @Transactional
-    public User removeSite(@Valid @NotNull @RequestBody UserSiteRequest userSiteRequest) {
+    public User removeSite(@PathVariable("id") @NotNull @Min(value = 0) Long id) {
         return userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
             try {
-                userSiteRepository.deleteByUserAndSite(user, userSiteRequest.getSite());
+                Site site = siteRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej strony!"));
+                userSiteRepository.deleteByUserAndSite(user, site);
+                site.setChosenAmount(site.getChosenAmount()-1);
+                site.measurePopularity();
+                siteRepository.save(site);
                 return user;
             } catch (EmptyResultDataAccessException exception) {
                 throw new ResourceNotFoundException("Podany użytkownik nie ma podanej strony!", exception);

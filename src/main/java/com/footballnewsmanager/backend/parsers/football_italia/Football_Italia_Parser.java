@@ -1,5 +1,6 @@
 package com.footballnewsmanager.backend.parsers.football_italia;
 
+import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.models.*;
 import com.footballnewsmanager.backend.parsers.ParserHelper;
 import com.footballnewsmanager.backend.repositories.*;
@@ -67,11 +68,10 @@ public class Football_Italia_Parser {
                 List<Document> docs = new ArrayList<>();
                 List<Long> newsIds = new ArrayList<>();
 
-                Optional<Site> site = siteRepository.findByName("Football Italia");
-                if (site.isPresent()) {
+                Site site = siteRepository.findById(1L).orElseThrow(()-> new ResourceNotFoundException("Nie ma takiej Strony"));
                     for (String tmpNewsUrl : tmpNewsUrls) {
                         Long newsId = Long.parseLong(tmpNewsUrl.split("/")[1]);
-                        if (!newsRepository.existsBySiteIdAndId(site.get().getId(), newsId)) {
+                        if (!newsRepository.existsBySiteIdAndId(site.getId(), newsId)) {
                             String articleLink = footballItaliaSiteUrl + tmpNewsUrl;
                             newsUrls.add(articleLink);
                             newsIds.add(newsId);
@@ -82,7 +82,7 @@ public class Football_Italia_Parser {
                             }
                         }
                     }
-                }
+
 
                 for (Document doc : docs) {
                     int index = docs.indexOf(doc);
@@ -97,16 +97,18 @@ public class Football_Italia_Parser {
                     List<Marker> markers = markerRepository.findAll();
                     Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, endContent, tagRepository));
 
-                    if (!newsRepository.existsBySiteIdAndId(newsIds.get(index), site.get().getId())) {
+                    if (!newsRepository.existsBySiteIdAndId(newsIds.get(index), site.getId())) {
                         News news = new News();
-                        news.setSiteId(site.get().getId());
+                        news.setSiteId(site.getId());
                         news.setId(newsIds.get(index));
                         news.setTitle(title);
                         news.setNewsUrl(newsUrls.get(index));
                         news.setImageUrl(imgUrl);
-                        news.setSite(site.get());
+                        news.setSite(site);
                         news.setDate(localDate);
-//                        news.setTags(tagSet);
+                        site.setNewsCount(site.getNewsCount()+1);
+                        site.measurePopularity();
+                        siteRepository.save(site);
                         newsRepository.save(news);
                         for (Tag tag :
                                 tagSet) {
