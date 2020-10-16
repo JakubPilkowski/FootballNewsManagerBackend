@@ -3,6 +3,7 @@ package com.footballnewsmanager.backend.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
+import com.footballnewsmanager.backend.helpers.Multipliers;
 import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.*;
@@ -17,10 +18,6 @@ import java.util.Set;
 @Table(name = "teams")
 @JsonView(Views.Public.class)
 public class Team {
-
-    private final int NEWS_MULTIPLIER = 1;
-    private final double CHOSEN_BY_MULTIPLIER = 0.75;
-    private final double CLICK_MULTIPLIER = 0.5;
 
 
     @Id
@@ -151,9 +148,9 @@ public class Team {
     }
 
     public void measurePopularity(){
-        setPopularity(getClicks()*CLICK_MULTIPLIER
-                +getNewsCount()*NEWS_MULTIPLIER
-                +getChosenAmount()*CHOSEN_BY_MULTIPLIER);
+        setPopularity(getClicks()* Multipliers.CLICK_MULTIPLIER
+                +getNewsCount()* Multipliers.NEWS_MULTIPLIER
+                +getChosenAmount()* Multipliers.CHOSEN_BY_MULTIPLIER);
     }
 
     public Long getChosenAmount() {
