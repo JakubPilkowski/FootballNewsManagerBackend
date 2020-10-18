@@ -38,7 +38,7 @@ public class LeaguesHelper {
         teamRepository.deleteAll();
         markerRepository.deleteAll();
         for (League league : leagues) {
-            Marker leagueMarker = addMarker(league.getName());
+//            Marker leagueMarker = addMarker(league.getName());
             if (league.getApisportid() != 0) {
                 apiSportWebClient
                         .get()
@@ -53,7 +53,7 @@ public class LeaguesHelper {
                                 Marker teamNameMarker = addMarker(teamRes.getTeam().getName());
                                 Set<Marker> markersList = listInitWithExceptions(teamRes);
                                 markersList.add(teamNameMarker);
-                                markersList.add(leagueMarker);
+//                                markersList.add(leagueMarker);
                                 TranslateRequest translateRequest = new TranslateRequest(teamNameMarker.getName(), "en", "pl");
                                 googleTranslateApi
                                         .post()
@@ -62,6 +62,7 @@ public class LeaguesHelper {
                                         .retrieve()
                                         .bodyToMono(TranslateResponse.class)
                                         .subscribe(translateResponse -> {
+                                            System.out.println(translateResponse.getData().getTranslations().get(0).getTranslatedText());
                                             String repairedTranslationName = translateExceptionsRepair(getTranslatedText(translateResponse));
                                             if (!markerRepository.existsByName(repairedTranslationName)) {
                                                 Marker polishTeamNameMarker = addMarker(repairedTranslationName);
@@ -91,7 +92,7 @@ public class LeaguesHelper {
                                     Set<Marker> teamMarkers = new HashSet<>();
                                     Marker teamNameMarker = addMarker(countryRes.getName());
                                     teamMarkers.add(teamNameMarker);
-                                    teamMarkers.add(leagueMarker);
+//                                    teamMarkers.add(leagueMarker);
                                     TranslateRequest translateRequest = new TranslateRequest(countryRes.getName(), "en", "pl");
                                     googleTranslateApi
                                             .post()
@@ -156,7 +157,7 @@ public class LeaguesHelper {
 
     public Marker addMarker(String value) {
         Marker additionalMarker = new Marker();
-        additionalMarker.setName(value);
+        additionalMarker.setName(value.equals("Manchester") ? "Man City" : value);
         markerRepository.save(additionalMarker);
         return additionalMarker;
     }
@@ -203,7 +204,7 @@ public class LeaguesHelper {
             case "Arsenał":
                 repairedValue = "Arsenal";
                 break;
-            case "Machester":
+            case "Miasto mężczyzn":
                 repairedValue = "Manchester City";
                 break;
             case "Kryształowy Pałac":

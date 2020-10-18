@@ -55,6 +55,12 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserSite> userSites = new ArrayList<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserNewsLike> userLikes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<UserNewsDislike> userDislikes = new ArrayList<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JsonView(Views.Internal.class)
@@ -186,5 +192,21 @@ public class User {
 
     public void removeFromRoles(Role role){
         this.roles.remove(role);
+    }
+
+    public List<UserNewsLike> getUserLikes() {
+        return userLikes;
+    }
+
+    public void setUserLikes(List<UserNewsLike> userLikes) {
+        this.userLikes = userLikes;
+    }
+
+    public List<UserNewsDislike> getUserDislikes() {
+        return userDislikes;
+    }
+
+    public void setUserDislikes(List<UserNewsDislike> userNewsDislikes) {
+        this.userDislikes = userNewsDislikes;
     }
 }
