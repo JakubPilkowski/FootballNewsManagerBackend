@@ -1,7 +1,9 @@
 package com.footballnewsmanager.backend.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
+import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.*;
 import javax.validation.constraints.Min;
@@ -9,6 +11,7 @@ import javax.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "news_tags")
+@JsonView(Views.Public.class)
 public class NewsTag {
 
     @Id

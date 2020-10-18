@@ -50,9 +50,11 @@ public class News {
 
     @ManyToOne
     @JoinColumn(name = "site")
+    @JsonView(Views.Internal.class)
     private Site site;
 
     @OneToMany(mappedBy = "news", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonView(Views.Internal.class)
     private Set<NewsTag> tags = new HashSet<>();
 
     @OneToMany(mappedBy = "news", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -68,11 +70,11 @@ public class News {
     private List<UserNewsDislike> userDislikes = new ArrayList<>();
 
     @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
-    @Min(value = 0, message = ValidationMessage.CLICKS_LESS_THAN_ZERO)
     private double popularity = 0L;
 
     @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
     @Min(value = 0, message = ValidationMessage.CLICKS_LESS_THAN_ZERO)
+    @JsonIgnore
     private Long clicks = 0L;
 
     @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
