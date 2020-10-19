@@ -1,5 +1,6 @@
 package com.footballnewsmanager.backend.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
@@ -46,12 +47,7 @@ public class Team {
     @Min(value = 0, message = ValidationMessage.POPULARITY_LESS_THAN_ZERO)
     private Long chosenAmount = 0L;
 
-
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "team_markers",
-            joinColumns = @JoinColumn(name = "teams_id"),
-            inverseJoinColumns = @JoinColumn(name = "markers_id"))
+    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonView(Views.Internal.class)
     private Set<Marker> markers;
 

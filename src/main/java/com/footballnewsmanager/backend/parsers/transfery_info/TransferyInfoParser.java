@@ -35,68 +35,23 @@ public class TransferyInfoParser {
     }
 
 
-    public void getNews() {
+    public void getNews(List<Marker> markers) {
         Document transferyInfoMainDoc;
         String tranferyInfoMainUrl = "https://transfery.info";
+        Site site = siteRepository.findById(2L).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej strony"));
         try {
             transferyInfoMainDoc = Jsoup.connect("https://transfery.info/aktualnosci").get();
             List<String> tmpNewsUrls = transferyInfoMainDoc.getElementsByClass("article-links").select("a").eachAttr("href");
-            List<String> newsUrls = new ArrayList<>();
-            List<Long> newsIds = new ArrayList<>();
-            List<Document> docs = new ArrayList<>();
-            Site site = siteRepository.findById(2L).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej strony"));
             for (String tmpNewsUrl : tmpNewsUrls) {
                 Long newsId = Long.parseLong(tmpNewsUrl.split("/")[3]);
                 if (!newsRepository.existsBySiteIdAndId(site.getId(), newsId)) {
                     String articleLink = tranferyInfoMainUrl + tmpNewsUrl;
-                    newsUrls.add(articleLink);
-                    newsIds.add(newsId);
                     try {
-                        docs.add(Jsoup.connect(articleLink).get());
+                        Document doc = Jsoup.connect(articleLink).get();
+                        parseNewsAndSave(tranferyInfoMainUrl, site, doc, markers, newsId, articleLink);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                }
-            }
-
-
-            for (Document doc :
-                    docs) {
-                int index = docs.indexOf(doc);
-                Elements articleElement = doc.getElementsByTag("article");
-                String title = articleElement.get(0).select("h1").text();
-                String imgUrl = tranferyInfoMainUrl + "/" + articleElement.select("picture").get(0).select("source").get(1).attr("srcset");
-                String date = articleElement.select("time").text().split(" ")[0];
-                LocalDate localDate = LocalDate.parse(date);
-                String articleTagSection = doc.getElementsByClass("d-inline").text();
-
-                List<Marker> markers = markerRepository.findAll();
-                Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, articleTagSection, tagRepository));
-
-                if (!newsRepository.existsBySiteIdAndId(newsIds.get(index), site.getId())) {
-                    News news = new News();
-                    news.setSiteId(site.getId());
-                    news.setId(newsIds.get(index));
-                    news.setTitle(title);
-                    news.setNewsUrl(newsUrls.get(index));
-                    news.setImageUrl(imgUrl);
-                    news.setSite(site);
-                    news.setDate(localDate);
-                    site.setNewsCount(site.getNewsCount()+1);
-                    site.measurePopularity();
-                    siteRepository.save(site);
-                    newsRepository.save(news);
-
-                    for (Tag tag :
-                            tagSet) {
-                        NewsTag newsTag = new NewsTag();
-                        newsTag.setNews(news);
-                        newsTag.setTag(tag);
-                        newsTagRepository.save(newsTag);
-                    }
-
-                    ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository,
-                            markerRepository, teamRepository);
                 }
             }
         } catch (IOException e) {
@@ -105,5 +60,23 @@ public class TransferyInfoParser {
 
     }
 
+    public void parseNewsAndSave(String tranferyInfoMainUrl, Site site, Document doc, List<Marker> markers, Long newsId, String newsUrl) {
+        Elements articleElement = doc.getElementsByTag("article");
+        String title = articleElement.get(0).select("h1").text();
+        String imgUrl = tranferyInfoMainUrl + "/" + articleElement.select("picture").get(0).select("source").get(1).attr("srcset");
+        String date = articleElement.select("time").text().split(" ")[0];
+        LocalDate localDate = LocalDate.parse(date);
+        String articleTagSection = doc.getElementsByClass("d-inline").text();
+        Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, articleTagSection, tagRepository));
+        News news = ParserHelper.saveNews(site, newsId, title, newsUrl, imgUrl, localDate, siteRepository, newsRepository);
+        for (Tag tag :
+                tagSet) {
+            NewsTag newsTag = new NewsTag();
+            newsTag.setNews(news);
+            newsTag.setTag(tag);
+            newsTagRepository.save(newsTag);
+        }
+        ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository, markerRepository, teamRepository);
+    }
 
 }
