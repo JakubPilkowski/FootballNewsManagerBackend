@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface MarkerRepository extends JpaRepository<Marker, Long> {
 
-    Optional<Marker>findByName(String name);
+    Optional<Marker> findByName(String name);
 
     boolean existsByName(String name);
 }

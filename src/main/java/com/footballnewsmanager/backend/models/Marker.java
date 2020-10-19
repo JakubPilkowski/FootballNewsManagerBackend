@@ -8,8 +8,6 @@ import com.footballnewsmanager.backend.views.Views;
 import javax.persistence.*;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import java.util.Set;
 
 @Entity
 @Table(name = "markers",uniqueConstraints = {
@@ -27,9 +25,9 @@ public class Marker {
     @NotBlank(message = ValidationMessage.MARKER_NAME_NOT_BLANK)
     private String name;
 
-    @ManyToMany(mappedBy = "markers", fetch = FetchType.EAGER)
+    @ManyToOne
     @JsonBackReference
-    private Set<Team> teams;
+    private Team team;
 
     public Long getId() {
         return id;
@@ -48,11 +46,11 @@ public class Marker {
     }
 
 
-    public Set<Team> getTeams() {
-        return teams;
+    public Team getTeam() {
+        return team;
     }
 
-    public void setTeams(Set<Team> teams) {
-        this.teams = teams;
+    public void setTeam(Team team) {
+        this.team = team;
     }
 }

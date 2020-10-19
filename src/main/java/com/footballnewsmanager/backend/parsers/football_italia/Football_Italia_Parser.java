@@ -57,74 +57,51 @@ public class Football_Italia_Parser {
         this.newsTagRepository = newsTagRepository;
     }
 
-    public void getNews() {
+    public void getNews(List<Marker> markers) {
+        Site site = siteRepository.findById(1L).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej Strony"));
         for (String italianTeam : italianTeams) {
             Document footballItaliaMainDoc;
             try {
                 footballItaliaMainDoc = Jsoup.connect("https://www.football-italia.net/clubs/" + italianTeam + "/news").get();
                 List<String> tmpNewsUrls = footballItaliaMainDoc.body().getElementsByClass("news-idx-item-title").select("a").eachAttr("href");
-                List<String> newsUrls = new ArrayList<>();
                 String footballItaliaSiteUrl = "https://www.football-italia.net";
-                List<Document> docs = new ArrayList<>();
-                List<Long> newsIds = new ArrayList<>();
-
-                Site site = siteRepository.findById(1L).orElseThrow(()-> new ResourceNotFoundException("Nie ma takiej Strony"));
-                    for (String tmpNewsUrl : tmpNewsUrls) {
-                        Long newsId = Long.parseLong(tmpNewsUrl.split("/")[1]);
-                        if (!newsRepository.existsBySiteIdAndId(site.getId(), newsId)) {
-                            String articleLink = footballItaliaSiteUrl + tmpNewsUrl;
-                            newsUrls.add(articleLink);
-                            newsIds.add(newsId);
-                            try{
-                                docs.add(Jsoup.connect(articleLink).get());
-                            } catch (IOException e){
-                                e.printStackTrace();
-                            }
+                for (String tmpNewsUrl : tmpNewsUrls) {
+                    Long newsId = Long.parseLong(tmpNewsUrl.split("/")[1]);
+                    if (!newsRepository.existsBySiteIdAndId(site.getId(), newsId)) {
+                        String articleLink = footballItaliaSiteUrl + tmpNewsUrl;
+                        try {
+                            Document doc = Jsoup.connect(articleLink).get();
+                            parseNewsAndSave(site, doc, markers, newsId, articleLink);
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
-                    }
-
-
-                for (Document doc : docs) {
-                    int index = docs.indexOf(doc);
-                    String title = doc.getElementsByClass("title").text();
-                    String imgUrl = doc.getElementsByClass("story-image-wrapper").select("img").first().attr("src");
-                    String[] date = doc.getElementsByClass("date").html().split(" ");
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d yyyy", Locale.ENGLISH);
-                    LocalDate localDate = LocalDate.parse(date[1] + " " + date[2] + " " + date[3], formatter);
-                    String content = doc.body().getElementsByClass("content").select("p").text();
-                    String footballItaliaEndNewsSyntax = "Watch Serie A live in the UK on Premier Sports for just £9.99 per month including live LaLiga, Eredivisie, Scottish Cup Football and more. Visit: https://www.premiersports.com/subscribenow";
-                    String endContent = content.replace(footballItaliaEndNewsSyntax, "");
-                    List<Marker> markers = markerRepository.findAll();
-                    Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, endContent, tagRepository));
-
-                    if (!newsRepository.existsBySiteIdAndId(newsIds.get(index), site.getId())) {
-                        News news = new News();
-                        news.setSiteId(site.getId());
-                        news.setId(newsIds.get(index));
-                        news.setTitle(title);
-                        news.setNewsUrl(newsUrls.get(index));
-                        news.setImageUrl(imgUrl);
-                        news.setSite(site);
-                        news.setDate(localDate);
-                        site.setNewsCount(site.getNewsCount()+1);
-                        site.measurePopularity();
-                        siteRepository.save(site);
-                        newsRepository.save(news);
-                        for (Tag tag :
-                                tagSet) {
-                            NewsTag newsTag = new NewsTag();
-                            newsTag.setNews(news);
-                            newsTag.setTag(tag);
-                            newsTagRepository.save(newsTag);
-                        }
-//                        List<Team> teams = teamRepository.findAll();
-                        ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository,
-                                markerRepository, teamRepository);
                     }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+
+    private void parseNewsAndSave(Site site, Document doc, List<Marker> markers, Long newsId, String newsUrl) {
+        String title = doc.getElementsByClass("title").text();
+        String imgUrl = doc.getElementsByClass("story-image-wrapper").select("img").first().attr("src");
+        String[] date = doc.getElementsByClass("date").html().split(" ");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d yyyy", Locale.ENGLISH);
+        LocalDate localDate = LocalDate.parse(date[1] + " " + date[2] + " " + date[3], formatter);
+        String content = doc.body().getElementsByClass("content").select("p").text();
+        String footballItaliaEndNewsSyntax = "Watch Serie A live in the UK on Premier Sports for just £9.99 per month including live LaLiga, Eredivisie, Scottish Cup Football and more. Visit: https://www.premiersports.com/subscribenow";
+        String endContent = content.replace(footballItaliaEndNewsSyntax, "");
+        Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, endContent, tagRepository));
+        News news = ParserHelper.saveNews(site, newsId, title, newsUrl, imgUrl, localDate, siteRepository, newsRepository);
+        for (Tag tag :
+                tagSet) {
+            NewsTag newsTag = new NewsTag();
+            newsTag.setNews(news);
+            newsTag.setTag(tag);
+            newsTagRepository.save(newsTag);
+        }
+        ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository, markerRepository, teamRepository);
     }
 }

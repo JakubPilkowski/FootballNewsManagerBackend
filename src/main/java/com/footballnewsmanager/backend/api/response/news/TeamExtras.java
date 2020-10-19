@@ -1,9 +1,12 @@
 package com.footballnewsmanager.backend.api.response.news;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.models.Team;
+import com.footballnewsmanager.backend.views.Views;
 
 import java.util.List;
 
+@JsonView(Views.Public.class)
 public class TeamExtras extends BaseNewsAdjustment{
 
     private List<Team> teams;

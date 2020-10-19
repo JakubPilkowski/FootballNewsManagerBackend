@@ -6,10 +6,7 @@ import com.footballnewsmanager.backend.api.request.news.NewsForTeamsRequest;
 import com.footballnewsmanager.backend.api.response.BaseResponse;
 import com.footballnewsmanager.backend.api.response.news.*;
 import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
-import com.footballnewsmanager.backend.models.News;
-import com.footballnewsmanager.backend.models.Team;
-import com.footballnewsmanager.backend.models.UserNewsDislike;
-import com.footballnewsmanager.backend.models.UserNewsLike;
+import com.footballnewsmanager.backend.models.*;
 import com.footballnewsmanager.backend.parsers.football_italia.Football_Italia_Parser;
 import com.footballnewsmanager.backend.parsers.transfery_info.TransferyInfoParser;
 import com.footballnewsmanager.backend.repositories.*;
@@ -46,9 +43,10 @@ public class NewsController {
     private final UserNewsLikeRepository userNewsLikeRepository;
     private final UserNewsDislikesRepository userNewsDislikesRepository;
     private final TeamNewsRepository teamNewsRepository;
+    private final MarkerRepository markerRepository;
     private final UserRepository userRepository;
 
-    public NewsController(Football_Italia_Parser footballItaliaParser, TransferyInfoParser transferyInfoParser, NewsRepository newsRepository, TeamRepository teamRepository, UserService userService, UserNewsLikeRepository userNewsLikeRepository, UserNewsDislikesRepository userNewsDislikesRepository, TeamNewsRepository teamNewsRepository, UserRepository userRepository) {
+    public NewsController(Football_Italia_Parser footballItaliaParser, TransferyInfoParser transferyInfoParser, NewsRepository newsRepository, TeamRepository teamRepository, UserService userService, UserNewsLikeRepository userNewsLikeRepository, UserNewsDislikesRepository userNewsDislikesRepository, TeamNewsRepository teamNewsRepository, MarkerRepository markerRepository, UserRepository userRepository) {
         this.footballItaliaParser = footballItaliaParser;
         this.transferyInfoParser = transferyInfoParser;
         this.newsRepository = newsRepository;
@@ -57,6 +55,7 @@ public class NewsController {
         this.userNewsLikeRepository = userNewsLikeRepository;
         this.userNewsDislikesRepository = userNewsDislikesRepository;
         this.teamNewsRepository = teamNewsRepository;
+        this.markerRepository = markerRepository;
         this.userRepository = userRepository;
     }
 
@@ -103,6 +102,7 @@ public class NewsController {
                         "highlighted",
                         "popularity"));
                 Page<News> hotNewsList = newsRepository.findAll(hotNewsPagable);
+                System.out.println(hotNewsList.getContent().get(0).getTitle());
                 News hotNews = hotNewsList.getContent().get(0);
                 NewsExtras newsExtras = new NewsExtras("Ostatnio popularne", NewsInfoType.HOT_NEWS,
                         hotNews);
@@ -248,8 +248,9 @@ public class NewsController {
     @GetMapping("/tmpAddNews")
     @Transactional()
     public String addNewsFromFootballItalia() {
-        footballItaliaParser.getNews();
-        transferyInfoParser.getNews();
+        List<Marker> markers = markerRepository.findAll();
+        footballItaliaParser.getNews(markers);
+        transferyInfoParser.getNews(markers);
         return "success";
     }
 

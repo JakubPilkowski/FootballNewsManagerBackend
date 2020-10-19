@@ -38,7 +38,6 @@ public class LeaguesHelper {
         teamRepository.deleteAll();
         markerRepository.deleteAll();
         for (League league : leagues) {
-//            Marker leagueMarker = addMarker(league.getName());
             if (league.getApisportid() != 0) {
                 apiSportWebClient
                         .get()
@@ -50,11 +49,10 @@ public class LeaguesHelper {
                         .subscribe(teamsResponse -> {
                             for (TeamResponse teamRes : teamsResponse.getResponse()) {
                                 Team team = new Team();
-                                Marker teamNameMarker = addMarker(teamRes.getTeam().getName());
-                                Set<Marker> markersList = listInitWithExceptions(teamRes);
+                                String teamNameMarker = teamRes.getTeam().getName();
+                                Set<String> markersList = listInitWithExceptions(teamRes);
                                 markersList.add(teamNameMarker);
-//                                markersList.add(leagueMarker);
-                                TranslateRequest translateRequest = new TranslateRequest(teamNameMarker.getName(), "en", "pl");
+                                TranslateRequest translateRequest = new TranslateRequest(teamNameMarker, "en", "pl");
                                 googleTranslateApi
                                         .post()
                                         .uri("")
@@ -62,18 +60,21 @@ public class LeaguesHelper {
                                         .retrieve()
                                         .bodyToMono(TranslateResponse.class)
                                         .subscribe(translateResponse -> {
-                                            System.out.println(translateResponse.getData().getTranslations().get(0).getTranslatedText());
                                             String repairedTranslationName = translateExceptionsRepair(getTranslatedText(translateResponse));
-                                            if (!markerRepository.existsByName(repairedTranslationName)) {
-                                                Marker polishTeamNameMarker = addMarker(repairedTranslationName);
-                                                markersList.add(polishTeamNameMarker);
-                                                team.setName(polishTeamNameMarker.getName());
-                                            } else
-                                                team.setName(teamNameMarker.getName());
+                                            if (!markersList.contains(repairedTranslationName))
+                                                team.setName(repairedTranslationName);
+                                            else team.setName(teamNameMarker);
+//                                            if (repairedTranslationName.equals("Manchester")) {
+//                                                markersList.remove(teamNameMarker);
+//                                                markersList.add("Manchester City");
+//                                                team.setName("Manchester City");
+//                                            }
+                                            markersList.add(repairedTranslationName);
                                             team.setLeague(league);
                                             team.setLogoUrl(teamRes.getTeam().getLogo());
-                                            team.setMarkers(markersList);
                                             teamRepository.save(team);
+                                            for (String name : markersList)
+                                                addMarker(name, team);
                                         });
                             }
                         });
@@ -89,11 +90,10 @@ public class LeaguesHelper {
                             for (CountryResponse countryRes : countriesResponse.getResponse()) {
                                 if (!countryRes.getName().equals("World")) {
                                     Team team = new Team();
-                                    Set<Marker> teamMarkers = new HashSet<>();
-                                    Marker teamNameMarker = addMarker(countryRes.getName());
+                                    Set<String> teamMarkers = new HashSet<>();
+                                    String teamNameMarker = countryRes.getName();
                                     teamMarkers.add(teamNameMarker);
-//                                    teamMarkers.add(leagueMarker);
-                                    TranslateRequest translateRequest = new TranslateRequest(countryRes.getName(), "en", "pl");
+                                    TranslateRequest translateRequest = new TranslateRequest(teamNameMarker, "en", "pl");
                                     googleTranslateApi
                                             .post()
                                             .uri("")
@@ -102,22 +102,21 @@ public class LeaguesHelper {
                                             .bodyToMono(TranslateResponse.class)
                                             .subscribe(translateResponse -> {
                                                 String repairedTranslationName = translateExceptionsRepair(getTranslatedText(translateResponse));
-                                                if (!markerRepository.existsByName(repairedTranslationName)) {
-                                                    Marker polishNameMarker = addMarker(repairedTranslationName);
-                                                    teamMarkers.add(polishNameMarker);
-                                                    team.setName(polishNameMarker.getName());
-                                                } else
-                                                    team.setName(teamNameMarker.getName());
+                                                if (!teamMarkers.contains(repairedTranslationName)) {
+                                                    team.setName(repairedTranslationName);
+                                                } else team.setName(teamNameMarker);
+                                                teamMarkers.add(repairedTranslationName);
                                                 if (countryRes.getName().equals("Moldova")) {
-                                                    teamMarkers.add(addMarker("Mołdawia"));
+                                                    teamMarkers.add("Mołdawia");
                                                     team.setName("Mołdawia");
                                                 }
                                                 team.setLeague(league);
                                                 team.setLogoUrl(countryRes.getFlag());
-                                                team.setMarkers(teamMarkers);
                                                 teamRepository.save(team);
-                                            });
 
+                                                for (String name : teamMarkers)
+                                                    addMarker(name, team);
+                                            });
                                 }
                             }
                         });
@@ -126,47 +125,46 @@ public class LeaguesHelper {
     }
 
 
-    public Set<Marker> listInitWithExceptions(TeamResponse teamRes) {
-        Set<Marker> markersList = new HashSet<>();
+    public Set<String> listInitWithExceptions(TeamResponse teamRes) {
+        Set<String> markersList = new HashSet<>();
         switch (teamRes.getTeam().getName()) {
             case "Borussia Monchengladbach":
-                markersList.add(addMarker("Borussia Mönchengladbach"));
+                markersList.add("Borussia Mönchengladbach");
                 break;
             case "FC Rostov":
-                markersList.add(addMarker("FK Rostów"));
+                markersList.add("FK Rostów");
                 break;
             case "Paris Saint Germain":
-                markersList.add(addMarker("PSG"));
+                markersList.add("PSG");
                 break;
             case "WSG Wattens":
-                markersList.add(addMarker("Tirol"));
+                markersList.add("Tirol");
                 break;
             case "AS Roma":
-                markersList.add(addMarker("Roma"));
+                markersList.add("Roma");
                 break;
             case "AC Milan":
-                markersList.add(addMarker("Milan"));
+                markersList.add("Milan");
                 break;
             case "FC Schalke 04":
-                markersList.add(addMarker("Schalke"));
+                markersList.add("Schalke");
                 break;
         }
         return markersList;
     }
 
 
-    public Marker addMarker(String value) {
+    public void addMarker(String value, Team team) {
         Marker additionalMarker = new Marker();
-        additionalMarker.setName(value.equals("Manchester") ? "Man City" : value);
+        additionalMarker.setName(value);
+        additionalMarker.setTeam(team);
         markerRepository.save(additionalMarker);
-        return additionalMarker;
     }
 
 
     public String getTranslatedText(TranslateResponse translateResponse) {
         return translateResponse.getData().getTranslations().get(0).getTranslatedText();
     }
-
 
     public String translateExceptionsRepair(String translatedValue) {
         String repairedValue = "";
@@ -204,7 +202,7 @@ public class LeaguesHelper {
             case "Arsenał":
                 repairedValue = "Arsenal";
                 break;
-            case "Miasto mężczyzn":
+            case "Manchester":
                 repairedValue = "Manchester City";
                 break;
             case "Kryształowy Pałac":
