@@ -33,6 +33,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import javax.transaction.Transactional;
 import javax.validation.Valid;
@@ -145,7 +146,7 @@ public class AuthController extends ValidationExceptionHandlers {
     @PostMapping("sendResetPassToken/{email}")
     public ResponseEntity<BaseResponse> resetPasswordSendTokenToMail(@PathVariable("email") @NotBlank(message = ValidationMessage.EMAIL_NOT_BLANK) @Size(max = 40, message = ValidationMessage.EMAIL_SIZE) @Email(message = ValidationMessage.EMAIL_VALID) String email) {
         userRepository.findByEmail(email).map(user -> {
-            if (!passwordResetTokenRepository.existsByUserAndExpiryDateGreaterThan(user, Calendar.getInstance().getTime())) {
+//            if (!passwordResetTokenRepository.existsByUserAndExpiryDateGreaterThan(user, Calendar.getInstance().getTime())) {
                 String token = UUID.randomUUID().toString();
                 PasswordResetToken passwordResetToken = new PasswordResetToken();
                 passwordResetToken.setToken(token);
@@ -154,9 +155,14 @@ public class AuthController extends ValidationExceptionHandlers {
                 calendar.add(Calendar.DATE, 1);
                 passwordResetToken.setExpiryDate(calendar.getTime());
                 passwordResetTokenRepository.save(passwordResetToken);
-                MimeMessage mailMessage = MailSender.createResetPassMail("Reset hasła", token, email, javaMailSender);
+                MimeMessage mailMessage = null;
+                try {
+                    mailMessage = MailSender.createResetPassMail("Reset hasła", token, email, javaMailSender);
+                } catch (MessagingException e) {
+                    e.printStackTrace();
+                }
                 javaMailSender.send(mailMessage);
-            } else throw new BadRequestException("token został już wygenerowany");
+//            } else throw new BadRequestException("token został już wygenerowany");
             return user;
         }).orElseThrow(() -> new ResourceNotFoundException("Nie znaleziono konta na podany adres mailowy!"));
         return ResponseEntity.ok(new BaseResponse(true, "wysłano mail z tokenem aktywacyjnym"));

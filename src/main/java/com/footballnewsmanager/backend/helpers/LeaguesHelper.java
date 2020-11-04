@@ -64,11 +64,7 @@ public class LeaguesHelper {
                                             if (!markersList.contains(repairedTranslationName))
                                                 team.setName(repairedTranslationName);
                                             else team.setName(teamNameMarker);
-//                                            if (repairedTranslationName.equals("Manchester")) {
-//                                                markersList.remove(teamNameMarker);
-//                                                markersList.add("Manchester City");
-//                                                team.setName("Manchester City");
-//                                            }
+
                                             markersList.add(repairedTranslationName);
                                             team.setLeague(league);
                                             team.setLogoUrl(teamRes.getTeam().getLogo());
