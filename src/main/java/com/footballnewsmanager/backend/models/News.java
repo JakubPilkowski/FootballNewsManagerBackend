@@ -50,11 +50,11 @@ public class News {
 
     @ManyToOne
     @JoinColumn(name = "site")
-    @JsonView(Views.Internal.class)
+    @JsonView(Views.Public.class)
     private Site site;
 
     @OneToMany(mappedBy = "news", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonView(Views.Internal.class)
+    @JsonView(Views.Public.class)
     private Set<NewsTag> tags = new HashSet<>();
 
     @OneToMany(mappedBy = "news", cascade = CascadeType.ALL, orphanRemoval = true)

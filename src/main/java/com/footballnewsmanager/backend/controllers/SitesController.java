@@ -1,6 +1,7 @@
 package com.footballnewsmanager.backend.controllers;
 
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 import com.footballnewsmanager.backend.api.response.BaseResponse;
 import com.footballnewsmanager.backend.api.response.sites.SiteResponse;
@@ -10,6 +11,7 @@ import com.footballnewsmanager.backend.models.Site;
 import com.footballnewsmanager.backend.repositories.SiteRepository;
 import com.footballnewsmanager.backend.services.BaseService;
 import com.footballnewsmanager.backend.services.PaginationService;
+import com.footballnewsmanager.backend.views.Views;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +38,7 @@ public class SitesController {
     }
 
     @GetMapping(value = "", params = {"page"})
+    @JsonView(Views.Public.class)
     public ResponseEntity<SitesResponse> getSites(@RequestParam("page") @Min(value = 0) int page) {
         Pageable pageable = PageRequest.of(page, 10, Sort.by(Sort.Direction.DESC, "highlighted", "popularity"));
         Page<Site> sites = siteRepository.findAll(pageable);
