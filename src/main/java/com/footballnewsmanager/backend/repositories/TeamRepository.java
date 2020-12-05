@@ -20,5 +20,5 @@ public interface TeamRepository extends PagingAndSortingRepository<Team, Long>{
 
     Optional<Page<Team>> findByTeamNewsNewsIn(List<News>news, Pageable pageable);
 
-    Optional<Page<Team>> findByMarkersNameIn(Set<String> names, Pageable pageable);
+    Optional<Page<Team>> findDistinctByMarkersNameIn(Set<String> names, Pageable pageable);
 }

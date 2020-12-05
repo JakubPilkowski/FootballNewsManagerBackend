@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.transaction.Transactional;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -44,8 +45,10 @@ public class NewsController {
     private final TeamNewsRepository teamNewsRepository;
     private final MarkerRepository markerRepository;
     private final UserRepository userRepository;
+    private final UserNewsVisitedRepository userNewsVisitedRepository;
+    private final UserNewsSendedRepository userNewsSendedRepository;
 
-    public NewsController(Football_Italia_Parser footballItaliaParser, TransferyInfoParser transferyInfoParser, NewsRepository newsRepository, TeamRepository teamRepository, UserService userService, UserNewsLikeRepository userNewsLikeRepository, UserNewsDislikesRepository userNewsDislikesRepository, TeamNewsRepository teamNewsRepository, MarkerRepository markerRepository, UserRepository userRepository) {
+    public NewsController(Football_Italia_Parser footballItaliaParser, TransferyInfoParser transferyInfoParser, NewsRepository newsRepository, TeamRepository teamRepository, UserService userService, UserNewsLikeRepository userNewsLikeRepository, UserNewsDislikesRepository userNewsDislikesRepository, TeamNewsRepository teamNewsRepository, MarkerRepository markerRepository, UserRepository userRepository, UserNewsVisitedRepository userNewsVisitedRepository, UserNewsSendedRepository userNewsSendedRepository) {
         this.footballItaliaParser = footballItaliaParser;
         this.transferyInfoParser = transferyInfoParser;
         this.newsRepository = newsRepository;
@@ -56,12 +59,14 @@ public class NewsController {
         this.teamNewsRepository = teamNewsRepository;
         this.markerRepository = markerRepository;
         this.userRepository = userRepository;
+        this.userNewsVisitedRepository = userNewsVisitedRepository;
+        this.userNewsSendedRepository = userNewsSendedRepository;
     }
 
     @GetMapping(value = "all", params = {"page"})
     @JsonView(Views.Public.class)
     public ResponseEntity<NewsResponse> getNews(@RequestParam("page") @Min(value = 0) int page) {
-        Pageable pageable = PageRequest.of(page, 20, Sort.by(Sort.Direction.DESC, "date"));
+        Pageable pageable = PageRequest.of(page, 20, Sort.by(Sort.Direction.DESC, "date", "highlighted", "popularity"));
         Page<News> news = newsRepository.findAll(pageable);
         PaginationService.handlePaginationErrors(page, news);
         return ResponseEntity.ok().body(new NewsResponse(true, "newsy", news.getContent()));
@@ -99,16 +104,27 @@ public class NewsController {
                 teams.add(team.getTeam());
             }
 
-            Pageable pageable = PageRequest.of(page, 15);
+            Pageable pageable = PageRequest.of(page, 15, Sort.by(Sort.Direction.DESC, "date", "highlighted", "popularity"));
             Page<News> news = newsRepository.findDistinctByTeamNewsTeamIn(teams, pageable)
-                    .orElseThrow(() -> new ResourceNotFoundException("Nie ma drużyn dla podanych newsów"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Nie ma newsów dla podanych drużyn"));
             PaginationService.handlePaginationErrors(page, news);
+
+            List<UserNews> userNews = new ArrayList<>();
+            for(News singleNews: news.getContent()){
+                boolean isLiked = userNewsLikeRepository.existsByUserAndNews(user, singleNews);
+                boolean isDisliked = userNewsDislikesRepository.existsByUserAndNews(user, singleNews);
+                boolean isVisited = userNewsVisitedRepository.existsByUserAndNews(user, singleNews);
+                UserNews userSingleNews = new UserNews();
+                userSingleNews.setNews(singleNews);
+                userSingleNews.setLiked(isLiked);
+                userSingleNews.setVisited(isVisited);
+                userSingleNews.setDisliked(isDisliked);
+                userNews.add(userSingleNews);
+            }
 
             switch ((page + 3) % 3) {
                 case 0:
-                    Pageable hotNewsPagable = PageRequest.of(page, 1, Sort.by(Sort.Direction.DESC,
-                            "highlighted",
-                            "popularity", "date"));
+                    Pageable hotNewsPagable = PageRequest.of(page, 1, Sort.by(Sort.Direction.DESC, "date", "highlighted", "popularity"));
                     Page<News> hotNewsList = newsRepository.findAll(hotNewsPagable);
                     System.out.println(hotNewsList.getContent().get(0).getTitle());
                     News hotNews = hotNewsList.getContent().get(0);
@@ -156,14 +172,98 @@ public class NewsController {
                     newsForTeamsResponse.setAdditionalContent(teamExtras);
                     break;
             }
-
-            newsForTeamsResponse.setNews(news.getContent());
+            newsForTeamsResponse.setPages(news.getTotalPages());
+            newsForTeamsResponse.setNewsCount(news.getTotalElements());
+            Long count = newsRepository.countDistinctByTeamNewsTeamInAndDate(teams, LocalDate.now());
+            newsForTeamsResponse.setNewsToday(count);
+            newsForTeamsResponse.setAllNews(userNews);
             return user;
         });
 
         return ResponseEntity.ok(newsForTeamsResponse);
     }
 
+    @GetMapping("notifications")
+    @JsonView(Views.Internal.class)
+    public ResponseEntity<NotificationResponse> getNotifications(){
+        List<Notification> notifications = new ArrayList<>();
+
+        userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
+            List<FavouriteTeam> favTeams = user.getFavouriteTeams();
+            List<Team> teams = new ArrayList<>();
+            for (FavouriteTeam team : favTeams) {
+                teams.add(team.getTeam());
+            }
+
+            Long count = newsRepository.countDistinctByTeamNewsTeamIn(teams);
+
+            Pageable pageable = PageRequest.of(0, count.intValue(), Sort.by(Sort.Direction.DESC, "date", "highlighted", "popularity"));
+            Page<News> news = newsRepository.findDistinctByTeamNewsTeamIn(teams, pageable)
+                    .orElseThrow(() -> new ResourceNotFoundException("Nie ma newsów dla podanych drużyn"));
+            PaginationService.handlePaginationErrors(0, news);
+
+            HashMap<Team, Long> sendedBefore = new HashMap<>();
+            HashMap<Team, Long> sendedAfter = new HashMap<>();
+            for (Team team: teams) {
+                sendedBefore.put(team, 0L);
+                sendedAfter.put(team, 0L);
+                for(News singleNews: news.getContent()){
+                    if(teamNewsRepository.existsByTeamAndNews(team, singleNews)){
+                        if(!userNewsVisitedRepository.existsByUserAndNews(user, singleNews))
+                        {
+                            if(!userNewsSendedRepository.existsByUserAndNews(user, singleNews)){
+                                UserNewsSended userNewsSended = new UserNewsSended();
+                                userNewsSended.setUser(user);
+                                userNewsSended.setNews(singleNews);
+                                userNewsSendedRepository.save(userNewsSended);
+                            }
+                            else{
+                                sendedBefore.put(team, sendedBefore.get(team)+1);
+                            }
+                            sendedAfter.put(team, sendedAfter.get(team)+1);
+                        }
+                    }
+                }
+                Notification notification = new Notification();
+                notification.setTeam(team);
+                notification.setAmountBefore(sendedBefore.get(team));
+                notification.setAmountAfter(sendedAfter.get(team));
+                notifications.add(notification);
+            }
+
+            return user;
+        });
+
+
+        return ResponseEntity.ok(new NotificationResponse(notifications));
+    }
+
+    @PutMapping("visit/site={sid}/id={id}")
+    public ResponseEntity<UserNews> visitNews(@PathVariable("sid") @Min(value = 0) Long sid,
+                                              @PathVariable("id") @Min(value = 0) Long id) {
+        News news = newsRepository.findBySiteIdAndId(sid, id).orElseThrow(()-> new ResourceNotFoundException("Nie ma takiego wiadomości"));
+        UserNews userNews = new UserNews();
+        userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
+
+            if(!userNewsVisitedRepository.existsByUserAndNews(user, news)){
+                news.setClicks(news.getClicks()+1);
+                newsRepository.save(news);
+                UserNewsVisited userNewsVisited = new UserNewsVisited();
+                userNewsVisited.setUser(user);
+                userNewsVisited.setNews(news);
+                userNewsVisitedRepository.save(userNewsVisited);
+            }
+            boolean isLiked = userNewsLikeRepository.existsByUserAndNews(user, news);
+            boolean isDisliked = userNewsDislikesRepository.existsByUserAndNews(user, news);
+            boolean isVisited = userNewsVisitedRepository.existsByUserAndNews(user, news);
+            userNews.setNews(news);
+            userNews.setVisited(isVisited);
+            userNews.setLiked(isLiked);
+            userNews.setDisliked(isDisliked);
+            return user;
+        });
+        return ResponseEntity.ok(userNews);
+    }
 
     @PreAuthorize("hasAuthority('ADMIN')")
     @PutMapping("highlight/site={sid}/id={id}")
@@ -187,12 +287,16 @@ public class NewsController {
             if (!userNewsLikeRepository.existsByUserAndNews(user, news)) {
                 UserNewsLike userNewsLike = new UserNewsLike();
                 news.setLikes(news.getLikes() + 1);
+                message = "Polajkowano Wiadomość";
+                if(userNewsDislikesRepository.existsByUserAndNews(user, news)){
+                    userNewsDislikesRepository.deleteByUserAndNews(user, news);
+                    news.setDislikes(news.getDislikes()-1);
+                }
                 news.measurePopularity();
                 newsRepository.save(news);
                 userNewsLike.setNews(news);
                 userNewsLike.setUser(user);
                 userNewsLikeRepository.save(userNewsLike);
-                message = "Polajkowano Wiadomość";
             } else {
                 userNewsLikeRepository.deleteByUserAndNews(user, news);
                 news.setLikes(news.getLikes() - 1);
@@ -200,7 +304,15 @@ public class NewsController {
                 newsRepository.save(news);
                 message = "Odlajkowano wiadomość";
             }
-            singleNewsResponse.set(new SingleNewsResponse(true, message, news));
+            boolean isLiked = userNewsLikeRepository.existsByUserAndNews(user, news);
+            boolean isDisliked = userNewsDislikesRepository.existsByUserAndNews(user, news);
+            boolean isVisited = userNewsVisitedRepository.existsByUserAndNews(user, news);
+            UserNews userSingleNews = new UserNews();
+            userSingleNews.setNews(news);
+            userSingleNews.setLiked(isLiked);
+            userSingleNews.setVisited(isVisited);
+            userSingleNews.setDisliked(isDisliked);
+            singleNewsResponse.set(new SingleNewsResponse(true, message, userSingleNews));
             return user;
         });
         return ResponseEntity.ok(singleNewsResponse.get());
@@ -218,11 +330,16 @@ public class NewsController {
                 UserNewsDislike userNewsDislike = new UserNewsDislike();
                 news.setDislikes(news.getDislikes() + 1);
                 news.measurePopularity();
+                message = "Dodano dislajka";
+                if(userNewsLikeRepository.existsByUserAndNews(user, news)){
+                    userNewsLikeRepository.deleteByUserAndNews(user, news);
+                    news.setLikes(news.getLikes()-1);
+                }
+                news.measurePopularity();
                 newsRepository.save(news);
                 userNewsDislike.setNews(news);
                 userNewsDislike.setUser(user);
                 userNewsDislikesRepository.save(userNewsDislike);
-                message = "Dodano dislajka";
             } else {
                 userNewsDislikesRepository.deleteByUserAndNews(user, news);
                 news.setDislikes(news.getDislikes() - 1);
@@ -230,7 +347,15 @@ public class NewsController {
                 newsRepository.save(news);
                 message = "Usunięto dislajka";
             }
-            singleNewsResponse.set(new SingleNewsResponse(true, message, news));
+            boolean isLiked = userNewsLikeRepository.existsByUserAndNews(user, news);
+            boolean isDisliked = userNewsDislikesRepository.existsByUserAndNews(user, news);
+            boolean isVisited = userNewsVisitedRepository.existsByUserAndNews(user, news);
+            UserNews userSingleNews = new UserNews();
+            userSingleNews.setNews(news);
+            userSingleNews.setLiked(isLiked);
+            userSingleNews.setDisliked(isDisliked);
+            userSingleNews.setVisited(isVisited);
+            singleNewsResponse.set(new SingleNewsResponse(true, message, userSingleNews));
             return user;
         });
         return ResponseEntity.ok(singleNewsResponse.get());

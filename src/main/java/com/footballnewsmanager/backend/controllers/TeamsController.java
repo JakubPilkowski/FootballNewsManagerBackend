@@ -84,7 +84,7 @@ public class TeamsController {
             names.add(tag.getName());
         }
         Pageable pageable = PageRequest.of(0, names.size(), Sort.by(Sort.Direction.DESC, "popularity"));
-        Page<Team> teams = teamRepository.findByMarkersNameIn(names,pageable)
+        Page<Team> teams = teamRepository.findDistinctByMarkersNameIn(names,pageable)
                 .orElseThrow(()->new ResourceNotFoundException("Nie ma drużyn dla podanych tagów"));
         return ResponseEntity.ok(new TeamsResponse(true, "Drużyny dla podanych tagów", teams.getContent()));
     }

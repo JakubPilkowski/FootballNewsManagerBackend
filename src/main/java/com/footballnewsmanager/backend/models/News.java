@@ -70,11 +70,11 @@ public class News {
     private List<UserNewsDislike> userDislikes = new ArrayList<>();
 
     @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
+    @JsonIgnore
     private double popularity = 0L;
 
     @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
     @Min(value = 0, message = ValidationMessage.CLICKS_LESS_THAN_ZERO)
-    @JsonIgnore
     private Long clicks = 0L;
 
     @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
