@@ -10,6 +10,7 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface TeamRepository extends PagingAndSortingRepository<Team, Long>{
 
@@ -19,4 +20,5 @@ public interface TeamRepository extends PagingAndSortingRepository<Team, Long>{
 
     Optional<Page<Team>> findByTeamNewsNewsIn(List<News>news, Pageable pageable);
 
+    Optional<Page<Team>> findDistinctByMarkersNameIn(Set<String> names, Pageable pageable);
 }

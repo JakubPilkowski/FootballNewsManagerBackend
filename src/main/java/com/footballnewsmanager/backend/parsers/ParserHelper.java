@@ -15,26 +15,23 @@ import java.util.Set;
 public class ParserHelper {
 
 
-
-
-
     public static void connectNewsWithTeams(Set<Tag> tagSet, News news,
                                             TeamNewsRepository teamNewsRepository,
                                             MarkerRepository markerRepository,
                                             TeamRepository teamRepository) {
 
         for (Tag tag : tagSet) {
-            Marker marker = markerRepository.findByName(tag.getName()).orElseThrow(()->new ResourceNotFoundException(""));
+            Marker marker = markerRepository.findByName(tag.getName()).orElseThrow(() -> new ResourceNotFoundException(""));
             Team team = marker.getTeam();
-                if (!teamNewsRepository.existsByTeamAndNews(team, news)) {
-                    TeamNews teamNews = new TeamNews();
-                    teamNews.setNews(news);
-                    teamNews.setTeam(team);
-                    team.setNewsCount(team.getNewsCount() + 1);
-                    team.measurePopularity();
-                    teamRepository.save(team);
-                    teamNewsRepository.save(teamNews);
-                }
+            if (!teamNewsRepository.existsByTeamAndNews(team, news)) {
+                TeamNews teamNews = new TeamNews();
+                teamNews.setNews(news);
+                teamNews.setTeam(team);
+                team.setNewsCount(team.getNewsCount() + 1);
+                team.measurePopularity();
+                teamRepository.save(team);
+                teamNewsRepository.save(teamNews);
+            }
         }
     }
 
@@ -42,7 +39,7 @@ public class ParserHelper {
         Set<Tag> tagSet = new HashSet<>();
         for (Marker marker : markers) {
             if (article.contains(marker.getName())) {
-                Tag tag = tagRepository.findByName(marker.getName()).orElseGet(()->{
+                Tag tag = tagRepository.findByName(marker.getName()).orElseGet(() -> {
                     Tag newTag = new Tag();
                     newTag.setName(marker.getName());
                     newTag = tagRepository.save(newTag);
@@ -56,7 +53,7 @@ public class ParserHelper {
 
     public static News saveNews(Site site, Long newsId, String title, String newsUrl,
                                 String imgUrl, LocalDate localDate, SiteRepository siteRepository,
-                                NewsRepository newsRepository){
+                                NewsRepository newsRepository) {
         News news = new News();
         news.setSiteId(site.getId());
         news.setId(newsId);
@@ -65,7 +62,10 @@ public class ParserHelper {
         news.setImageUrl(imgUrl);
         news.setSite(site);
         news.setDate(localDate);
-        site.setNewsCount(site.getNewsCount()+1);
+        if (newsId % 3 == 0) {
+            news.setHighlighted(true);
+        }
+        site.setNewsCount(site.getNewsCount() + 1);
         site.measurePopularity();
         siteRepository.save(site);
         return newsRepository.save(news);

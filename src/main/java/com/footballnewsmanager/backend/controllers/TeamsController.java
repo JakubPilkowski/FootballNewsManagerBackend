@@ -2,11 +2,13 @@ package com.footballnewsmanager.backend.controllers;
 
 
 import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.api.request.teams.TeamsFromTagsRequest;
 import com.footballnewsmanager.backend.api.response.BaseResponse;
 import com.footballnewsmanager.backend.api.response.TeamsResponse;
 import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.helpers.LeaguesHelper;
 import com.footballnewsmanager.backend.models.League;
+import com.footballnewsmanager.backend.models.Tag;
 import com.footballnewsmanager.backend.models.Team;
 import com.footballnewsmanager.backend.repositories.LeagueRepository;
 import com.footballnewsmanager.backend.repositories.TeamRepository;
@@ -71,6 +73,20 @@ public class TeamsController {
     public ResponseEntity<TeamsResponse> teamById(@PathVariable("id") @Min(value = 1) Long id){
         Team team  = teamRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Nie ma takiej drużyny!"));
         return ResponseEntity.ok(new TeamsResponse(true, "Drużyna", Collections.singletonList(team)));
+    }
+
+
+    @PostMapping("/findByTags")
+    @JsonView(Views.Public.class)
+    public ResponseEntity<TeamsResponse> findByTags(@RequestBody TeamsFromTagsRequest request){
+        Set<String> names = new HashSet<>();
+        for (Tag tag: request.getTags()) {
+            names.add(tag.getName());
+        }
+        Pageable pageable = PageRequest.of(0, names.size(), Sort.by(Sort.Direction.DESC, "popularity"));
+        Page<Team> teams = teamRepository.findDistinctByMarkersNameIn(names,pageable)
+                .orElseThrow(()->new ResourceNotFoundException("Nie ma drużyn dla podanych tagów"));
+        return ResponseEntity.ok(new TeamsResponse(true, "Drużyny dla podanych tagów", teams.getContent()));
     }
 
 

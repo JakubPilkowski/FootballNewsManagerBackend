@@ -30,19 +30,26 @@ public class Site {
     @NotBlank(message = ValidationMessage.LOGO_NOT_BLANK)
     private String logoUrl;
 
+    @NotBlank(message = ValidationMessage.NEWS_URL_NOT_BLANK)
+    private String siteUrl;
+
     @NotBlank(message = ValidationMessage.SITE_DESCRIPTION_NOT_BLANK)
     @Size(min = 10, max = 150, message = ValidationMessage.SITE_DESCRIPTION_SIZE)
     private String description;
 
-    @JsonView(Views.Internal.class)
+    @JsonView(Views.Public.class)
     private boolean highlighted = false;
 
+    @JsonView(Views.Internal.class)
     private double popularity = 0;
 
+    @JsonView(Views.Internal.class)
     private Long clicks = 0L;
 
+    @JsonView(Views.Internal.class)
     private Long newsCount = 0L;
 
+    @JsonView(Views.Internal.class)
     private Long chosenAmount = 0L;
 
 
@@ -148,5 +155,13 @@ public class Site {
         setPopularity(getClicks()* Multipliers.CLICK_MULTIPLIER
                 +getNewsCount()* Multipliers.NEWS_MULTIPLIER
                 +getChosenAmount()* Multipliers.CHOSEN_BY_MULTIPLIER);
+    }
+
+    public String getSiteUrl() {
+        return siteUrl;
+    }
+
+    public void setSiteUrl(String siteUrl) {
+        this.siteUrl = siteUrl;
     }
 }

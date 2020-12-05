@@ -27,7 +27,7 @@ public class Team {
     private Long id;
 
     @NotBlank(message = ValidationMessage.TEAM_NAME_NOT_BLANK)
-    @Size(min=3, max = 50, message = ValidationMessage.TEAM_NAME_SIZE)
+    @Size(min = 3, max = 50, message = ValidationMessage.TEAM_NAME_SIZE)
     private String name;
 
     @NotBlank(message = ValidationMessage.LOGO_NOT_BLANK)
@@ -39,12 +39,15 @@ public class Team {
     private double popularity = 0f;
 
     @Min(value = 0, message = ValidationMessage.POPULARITY_LESS_THAN_ZERO)
-    private Long clicks= 0L;
+    @JsonView(Views.Internal.class)
+    private Long clicks = 0L;
 
     @Min(value = 0, message = ValidationMessage.POPULARITY_LESS_THAN_ZERO)
-    private Long newsCount= 0L;
+    @JsonView(Views.Internal.class)
+    private Long newsCount = 0L;
 
     @Min(value = 0, message = ValidationMessage.POPULARITY_LESS_THAN_ZERO)
+    @JsonView(Views.Internal.class)
     private Long chosenAmount = 0L;
 
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -53,7 +56,7 @@ public class Team {
 
     @OneToMany(mappedBy = "team")
     @JsonIgnore
-    private List<TeamNews> teamNews= new ArrayList<>();
+    private List<TeamNews> teamNews = new ArrayList<>();
 
     @ManyToOne
     @JsonView(Views.Internal.class)
@@ -143,10 +146,10 @@ public class Team {
         this.newsCount = newsCount;
     }
 
-    public void measurePopularity(){
-        setPopularity(getClicks()* Multipliers.CLICK_MULTIPLIER
-                +getNewsCount()* Multipliers.NEWS_MULTIPLIER
-                +getChosenAmount()* Multipliers.CHOSEN_BY_MULTIPLIER);
+    public void measurePopularity() {
+        setPopularity(getClicks() * Multipliers.CLICK_MULTIPLIER
+                + getNewsCount() * Multipliers.NEWS_MULTIPLIER
+                + getChosenAmount() * Multipliers.CHOSEN_BY_MULTIPLIER);
     }
 
     public Long getChosenAmount() {

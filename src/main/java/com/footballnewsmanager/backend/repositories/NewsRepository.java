@@ -27,5 +27,8 @@ public interface NewsRepository extends PagingAndSortingRepository<News, Long> {
 
     Optional<Page<News>> findDistinctByTeamNewsTeamIn(List<Team> teams, Pageable pageable);
 
+    Long countDistinctByTeamNewsTeamInAndDate(List<Team> teams, LocalDate date);
+
+    Long countDistinctByTeamNewsTeamIn(List<Team>teams);
 
 }

@@ -63,11 +63,11 @@ public class UserSettingsRequest {
         this.proposedNews = proposedNews;
     }
 
-    public @NotBlank List<Team> getFavouriteTeams() {
+    public List<Team> getFavouriteTeams() {
         return favouriteTeams;
     }
 
-    public void setFavouriteTeams(@NotBlank List<Team> favouriteTeams) {
+    public void setFavouriteTeams(List<Team> favouriteTeams) {
         this.favouriteTeams = favouriteTeams;
     }
 
