@@ -16,6 +16,10 @@ import com.footballnewsmanager.backend.validators.EnumNamePattern;
 import com.footballnewsmanager.backend.views.Views;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -259,6 +263,27 @@ public class UserController {
         return ResponseEntity.ok(new BaseResponse(true, "Zmiana motywu"));
     }
 
+    @PutMapping("me/addTeams")
+    @JsonView(Views.Public.class)
+    public User addTeams(@RequestBody TeamsRequest teamsRequest){
+        return userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
+            for(Team teamFromRequest: teamsRequest.getTeams()){
+                Team team = teamRepository.findById(teamFromRequest.getId()).orElseThrow(()-> new ResourceNotFoundException("Nie ma takiej drużyny"));
+                if(!favouriteTeamRepository.existsByUserAndTeam(user,team)){
+                    FavouriteTeam favouriteTeam = new FavouriteTeam();
+                    favouriteTeam.setTeam(team);
+                    favouriteTeam.setUser(user);
+                    team.setChosenAmount(team.getChosenAmount() + 1);
+                    team.measurePopularity();
+                    teamRepository.save(team);
+                    favouriteTeamRepository.save(favouriteTeam);
+                }
+            }
+            return user;
+        });
+    }
+
+
     @PutMapping("me/addTeam/{id}")
     @JsonView(Views.Public.class)
     public User addTeam(@PathVariable("id") @NotNull @Min(value = 0) Long id) {
@@ -276,6 +301,29 @@ public class UserController {
             } else {
                 throw new BadRequestException("Podana drużyna jest już dodana!");
             }
+        });
+    }
+
+
+    @DeleteMapping("me/removeTeams")
+    @JsonView(Views.Public.class)
+    @Transactional
+    public User removeTeams(@RequestBody TeamsRequest teamsRequest){
+        return userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
+            for(Team teamFromRequest: teamsRequest.getTeams()){
+                Team team = teamRepository.findById(teamFromRequest.getId()).orElseThrow(()-> new ResourceNotFoundException("Nie ma takiej drużyny"));
+                if(favouriteTeamRepository.existsByUserAndTeam(user,team)){
+                    try {
+                        favouriteTeamRepository.deleteByUserAndTeam(user, team);
+                        team.setChosenAmount(team.getChosenAmount() - 1);
+                        team.measurePopularity();
+                        teamRepository.save(team);
+                    } catch (EmptyResultDataAccessException exception) {
+                        throw new ResourceNotFoundException("Podany użytkownik nie ma polubionej danej drużyny!", exception);
+                    }
+                }
+            }
+            return user;
         });
     }
 

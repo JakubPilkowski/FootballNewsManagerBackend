@@ -42,6 +42,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.net.URI;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -107,6 +108,7 @@ public class AuthController extends ValidationExceptionHandlers {
 
         User user = new User(registerRequest.getUsername(), registerRequest.getEmail(), registerRequest.getPassword());
 
+        user.setAddedDate(LocalDate.now());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         Role role = roleRepository.findByName(RoleName.USER).orElseGet(() -> {

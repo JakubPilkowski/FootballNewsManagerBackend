@@ -2,28 +2,22 @@ package com.footballnewsmanager.backend.api.response.news;
 
 import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.response.BaseResponse;
-import com.footballnewsmanager.backend.models.News;
+import com.footballnewsmanager.backend.models.UserNews;
 import com.footballnewsmanager.backend.views.Views;
 
 import java.util.List;
 
 @JsonView(Views.Public.class)
-public class NewsResponse extends BaseResponse {
+public class NewsResponse {
 
 
-    private List<News> news;
+    private List<UserNews> news;
 
-    public NewsResponse(boolean success, String message, List<News> news) {
-        super(success, message);
-        this.news = news;
-    }
-
-
-    public List<News> getNews() {
+    public List<UserNews> getNews() {
         return news;
     }
 
-    public void setNews(List<News> news) {
+    public void setNews(List<UserNews> news) {
         this.news = news;
     }
 }

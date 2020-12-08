@@ -7,18 +7,18 @@ import com.footballnewsmanager.backend.views.Views;
 @JsonView(Views.Public.class)
 public class Notification {
 
-    private Team team;
+//    private Team team;
     private Long amountBefore;
 
     private Long amountAfter;
 
-    public Team getTeam() {
-        return team;
-    }
-
-    public void setTeam(Team team) {
-        this.team = team;
-    }
+//    public Team getTeam() {
+//        return team;
+//    }
+//
+//    public void setTeam(Team team) {
+//        this.team = team;
+//    }
 
     public Long getAmountAfter() {
         return amountAfter;

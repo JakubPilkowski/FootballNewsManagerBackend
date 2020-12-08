@@ -7,23 +7,12 @@ import com.footballnewsmanager.backend.views.Views;
 import java.util.List;
 
 @JsonView(Views.Public.class)
-public class NewsForTeamsResponse<T extends BaseNewsAdjustment> {
+public class NewsForTeamsResponse<T extends BaseNewsAdjustment> extends NewsResponse{
 
     private int pages;
     private Long newsCount;
     private Long newsToday;
-
-    private List<UserNews> allNews;
-
     private T additionalContent;
-
-    public List<UserNews> getAllNews() {
-        return allNews;
-    }
-
-    public void setAllNews(List<UserNews> allNews) {
-        this.allNews = allNews;
-    }
 
     public T getAdditionalContent() {
         return additionalContent;

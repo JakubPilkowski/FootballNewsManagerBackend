@@ -17,6 +17,8 @@ public interface NewsRepository extends PagingAndSortingRepository<News, Long> {
 
     boolean existsBySiteIdAndId(Long siteId, Long id);
 
+    boolean existsBySiteIdAndIdAndDateBefore(Long siteId, Long id,LocalDate date);
+
     void deleteByDateLessThan(LocalDate localDate);
 
     Optional<News> findBySiteIdAndId(Long sid, Long lid);
@@ -29,6 +31,6 @@ public interface NewsRepository extends PagingAndSortingRepository<News, Long> {
 
     Long countDistinctByTeamNewsTeamInAndDate(List<Team> teams, LocalDate date);
 
-    Long countDistinctByTeamNewsTeamIn(List<Team>teams);
+    Long countDistinctByTeamNewsTeamInAndDateAfter(List<Team>teams, LocalDate date);
 
 }

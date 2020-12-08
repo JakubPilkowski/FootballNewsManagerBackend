@@ -11,6 +11,7 @@ public class UserNews {
     private boolean isLiked;
     private boolean isDisliked;
     private boolean isVisited;
+    private boolean isBadgeVisited;
 
     public boolean isLiked() {
         return isLiked;
@@ -42,5 +43,13 @@ public class UserNews {
 
     public void setVisited(boolean visited) {
         isVisited = visited;
+    }
+
+    public boolean isBadgeVisited() {
+        return isBadgeVisited;
+    }
+
+    public void setBadgeVisited(boolean badgeVisited) {
+        isBadgeVisited = badgeVisited;
     }
 }
