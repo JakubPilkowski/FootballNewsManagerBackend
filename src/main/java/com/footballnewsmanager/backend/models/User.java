@@ -7,9 +7,11 @@ import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 import com.footballnewsmanager.backend.validators.EnumNamePattern;
 import com.footballnewsmanager.backend.views.Views;
 import org.hibernate.annotations.NaturalId;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import javax.validation.constraints.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -48,6 +50,10 @@ public class User {
     @Size(max = 60)
     @JsonIgnore
     private String password;
+
+    @NotNull(message = ValidationMessage.DATE_NOT_BLANK)
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate addedDate;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FavouriteTeam> favouriteTeams = new ArrayList<>();
@@ -208,5 +214,13 @@ public class User {
 
     public void setUserDislikes(List<UserNewsDislike> userNewsDislikes) {
         this.userDislikes = userNewsDislikes;
+    }
+
+    public LocalDate getAddedDate() {
+        return addedDate;
+    }
+
+    public void setAddedDate(LocalDate addedDate) {
+        this.addedDate = addedDate;
     }
 }

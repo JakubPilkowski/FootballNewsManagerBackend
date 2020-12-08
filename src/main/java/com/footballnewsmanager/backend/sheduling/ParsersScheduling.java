@@ -1,5 +1,6 @@
 package com.footballnewsmanager.backend.sheduling;
 
+import com.footballnewsmanager.backend.models.Marker;
 import com.footballnewsmanager.backend.parsers.football_italia.Football_Italia_Parser;
 import com.footballnewsmanager.backend.parsers.transfery_info.TransferyInfoParser;
 import com.footballnewsmanager.backend.repositories.MarkerRepository;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
 import javax.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.List;
 
 @Component
 public class ParsersScheduling {
@@ -26,14 +28,11 @@ public class ParsersScheduling {
         this.markerRepository = markerRepository;
     }
 
-    @Scheduled(cron = "0 0 11,15,19,22 * * *")
-    public void uploadFootballItaliaNews() {
-        footballItaliaParser.getNews(markerRepository.findAll());
-    }
-
-    @Scheduled(cron = "0 0 0,8,10,12,14,16,18,20,22 * * *")
+    @Scheduled(cron = "0 0,30 8-23 * * *")
     public void uploadTransferyInfoNews() {
-        transferyInfoParser.getNews(markerRepository.findAll());
+        List<Marker> markerList = markerRepository.findAll();
+        transferyInfoParser.getNews(markerList);
+        footballItaliaParser.getNews(markerList);
     }
 
     @Scheduled(cron = "0 0 12 * * *")

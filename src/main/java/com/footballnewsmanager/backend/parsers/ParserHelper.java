@@ -62,7 +62,7 @@ public class ParserHelper {
         news.setImageUrl(imgUrl);
         news.setSite(site);
         news.setDate(localDate);
-        if (newsId % 3 == 0) {
+        if (newsId % 25 == 0) {
             news.setHighlighted(true);
         }
         site.setNewsCount(site.getNewsCount() + 1);
