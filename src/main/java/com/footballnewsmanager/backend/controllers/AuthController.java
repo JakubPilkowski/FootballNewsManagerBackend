@@ -15,10 +15,8 @@ import com.footballnewsmanager.backend.exceptions.BadRequestException;
 import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.helpers.MailSender;
 import com.footballnewsmanager.backend.models.*;
-import com.footballnewsmanager.backend.repositories.BlacklistTokenRepository;
-import com.footballnewsmanager.backend.repositories.PasswordResetTokenRepository;
-import com.footballnewsmanager.backend.repositories.RoleRepository;
-import com.footballnewsmanager.backend.repositories.UserRepository;
+import com.footballnewsmanager.backend.repositories.*;
+import com.footballnewsmanager.backend.services.NewsService;
 import com.footballnewsmanager.backend.services.ResetPasswordService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,11 +37,10 @@ import javax.transaction.Transactional;
 import javax.validation.Valid;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.net.URI;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @RestController
@@ -61,11 +58,12 @@ public class AuthController extends ValidationExceptionHandlers {
     private final JwtTokenProvider tokenProvider;
     private final ResetPasswordService resetPasswordService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
-
+    private final NewsRepository newsRepository;
+    private final UserNewsRepository userNewsRepository;
 
     public AuthController(JavaMailSender javaMailSender, AuthenticationManager authenticationManager, BlacklistTokenRepository blacklistTokenRepository,
                           UserRepository userRepository, RoleRepository roleRepository,
-                          PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider, ResetPasswordService resetPasswordService, PasswordResetTokenRepository passwordResetTokenRepository) {
+                          PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider, ResetPasswordService resetPasswordService, PasswordResetTokenRepository passwordResetTokenRepository, NewsRepository newsRepository, UserNewsRepository userNewsRepository) {
         this.javaMailSender = javaMailSender;
         this.authenticationManager = authenticationManager;
         this.blacklistTokenRepository = blacklistTokenRepository;
@@ -75,6 +73,8 @@ public class AuthController extends ValidationExceptionHandlers {
         this.tokenProvider = tokenProvider;
         this.resetPasswordService = resetPasswordService;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.newsRepository = newsRepository;
+        this.userNewsRepository = userNewsRepository;
     }
 
     @PostMapping("/login")
@@ -107,8 +107,10 @@ public class AuthController extends ValidationExceptionHandlers {
         }
 
         User user = new User(registerRequest.getUsername(), registerRequest.getEmail(), registerRequest.getPassword());
-
-        user.setAddedDate(LocalDate.now());
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+        LocalDateTime localDateTime = LocalDateTime.now();
+        String format = dateTimeFormatter.format(localDateTime);
+        user.setAddedDate(LocalDateTime.parse(format, dateTimeFormatter));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         Role role = roleRepository.findByName(RoleName.USER).orElseGet(() -> {
@@ -118,6 +120,8 @@ public class AuthController extends ValidationExceptionHandlers {
         });
         user.setRoles(Collections.singleton(role));
         User result = userRepository.save(user);
+
+        NewsService.initNewsForUser(newsRepository, userNewsRepository, result);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentContextPath().path("/users/{username}")

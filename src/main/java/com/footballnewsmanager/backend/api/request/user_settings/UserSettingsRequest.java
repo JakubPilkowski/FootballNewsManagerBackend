@@ -18,15 +18,8 @@ public class UserSettingsRequest {
 
     private List<Site> chosenSites;
 
-//    @Enumerated(EnumType.STRING)
     @NotNull(message = ValidationMessage.LANGUAGE_NOT_BLANK)
     private Language language;
-
-    @NotNull(message = ValidationMessage.NOTIFICATION_NOT_BLANK)
-    boolean notifications;
-
-    @NotNull(message = ValidationMessage.DARK_MODE_NOT_BLANK)
-    boolean darkMode;
 
     @NotNull(message = ValidationMessage.PROPOSED_NEWS_NOT_BLANK)
     boolean proposedNews;
@@ -37,22 +30,6 @@ public class UserSettingsRequest {
 
     public void setLanguage(Language language) {
         this.language = language;
-    }
-
-    public boolean isNotifications() {
-        return notifications;
-    }
-
-    public void setNotifications(boolean notifications) {
-        this.notifications = notifications;
-    }
-
-    public boolean isDarkMode() {
-        return darkMode;
-    }
-
-    public void setDarkMode(boolean darkMode) {
-        this.darkMode = darkMode;
     }
 
     public boolean isProposedNews() {

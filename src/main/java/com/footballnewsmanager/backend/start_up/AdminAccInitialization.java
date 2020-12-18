@@ -9,7 +9,10 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Component
@@ -39,7 +42,11 @@ public class AdminAccInitialization implements CommandLineRunner {
     public void run(String... args) {
         if (!userRepository.existsByUsernameOrEmail(username, email)) {
             User user = new User(username, email, password);
-            user.setAddedDate(LocalDate.now());
+
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+            LocalDateTime localDateTime = LocalDateTime.now();
+            String format = dateTimeFormatter.format(localDateTime);
+            user.setAddedDate(LocalDateTime.parse(format, dateTimeFormatter));
             user.setPassword(passwordEncoder.encode(user.getPassword()));
             List<Role> roles = roleRepository.findAll();
             Set<Role> roleSet = new HashSet<>(roles);

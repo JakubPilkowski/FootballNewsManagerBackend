@@ -1,6 +1,7 @@
 package com.footballnewsmanager.backend.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 import com.footballnewsmanager.backend.views.Views;
@@ -17,6 +18,7 @@ public class NewsTag {
     @Id
     @GeneratedValue()
     @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
+    @JsonIgnore()
     public Long id;
 
     public Long getId() {

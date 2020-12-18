@@ -3,13 +3,11 @@ package com.footballnewsmanager.backend.parsers;
 import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.models.*;
 import com.footballnewsmanager.backend.repositories.*;
+import com.footballnewsmanager.backend.services.UserService;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Component
 public class ParserHelper {
@@ -35,6 +33,30 @@ public class ParserHelper {
         }
     }
 
+    public static void connectNewsWithUsers(
+            List<User> users, News news,
+            TeamNewsRepository teamNewsRepository, FavouriteTeamRepository favouriteTeamRepository,
+            UserNewsRepository userNewsRepository) {
+
+        for (User user : users) {
+            boolean exists = false;
+            List<FavouriteTeam> teams = favouriteTeamRepository.findByUser(user).orElse(new ArrayList<>());
+            for (FavouriteTeam team : teams) {
+                if (teamNewsRepository.existsByTeamAndNews(team.getTeam(), news)) {
+                    exists = true;
+                    break;
+                }
+            }
+            boolean isBadgeVisited = news.getDate().isBefore(user.getAddedDate()) || !exists;
+            UserNews userNews = new UserNews();
+            userNews.setNews(news);
+            userNews.setUser(user);
+            userNews.setInFavourites(exists);
+            userNews.setBadged(isBadgeVisited);
+            userNewsRepository.save(userNews);
+        }
+    }
+
     public static Set<Tag> getTags(List<Marker> markers, String article, TagRepository tagRepository) {
         Set<Tag> tagSet = new HashSet<>();
         for (Marker marker : markers) {
@@ -52,7 +74,7 @@ public class ParserHelper {
     }
 
     public static News saveNews(Site site, Long newsId, String title, String newsUrl,
-                                String imgUrl, LocalDate localDate, SiteRepository siteRepository,
+                                String imgUrl, LocalDateTime localDate, SiteRepository siteRepository,
                                 NewsRepository newsRepository) {
         News news = new News();
         news.setSiteId(site.getId());

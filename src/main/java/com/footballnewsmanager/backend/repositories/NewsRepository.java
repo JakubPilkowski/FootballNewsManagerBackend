@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,7 +20,7 @@ public interface NewsRepository extends PagingAndSortingRepository<News, Long> {
 
     boolean existsBySiteIdAndIdAndDateBefore(Long siteId, Long id,LocalDate date);
 
-    void deleteByDateLessThan(LocalDate localDate);
+    void deleteByDateLessThan(LocalDateTime localDateTime);
 
     Optional<News> findBySiteIdAndId(Long sid, Long lid);
 
@@ -29,8 +30,15 @@ public interface NewsRepository extends PagingAndSortingRepository<News, Long> {
 
     Optional<Page<News>> findDistinctByTeamNewsTeamIn(List<Team> teams, Pageable pageable);
 
-    Long countDistinctByTeamNewsTeamInAndDate(List<Team> teams, LocalDate date);
+    boolean existsByTeamNewsTeamIn(List<Team> teams);
+
+    Long countDistinctByTeamNewsTeamInAndDateAfter(List<Team> teams, LocalDateTime localDate);
+
+    Long countDistinctByDate(LocalDate date);
 
     Long countDistinctByTeamNewsTeamInAndDateAfter(List<Team>teams, LocalDate date);
 
+    Page<News> findDistinctByTeamNewsTeam(Team team, Pageable pageable);
+
+    Long countDistinctByTeamNewsTeam(Team team);
 }

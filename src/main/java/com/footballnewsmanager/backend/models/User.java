@@ -11,7 +11,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import javax.validation.constraints.*;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -52,8 +52,8 @@ public class User {
     private String password;
 
     @NotNull(message = ValidationMessage.DATE_NOT_BLANK)
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate addedDate;
+//    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDateTime addedDate;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FavouriteTeam> favouriteTeams = new ArrayList<>();
@@ -62,11 +62,8 @@ public class User {
     private List<UserSite> userSites = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<UserNewsLike> userLikes = new ArrayList<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private List<UserNewsDislike> userDislikes = new ArrayList<>();
+    @JsonIgnore()
+    private List<UserNews> userNews = new ArrayList<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JsonView(Views.Internal.class)
@@ -75,14 +72,12 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
-    private boolean darkMode = true;
 
     @Enumerated(EnumType.STRING)
     @NotNull(message = ValidationMessage.LANGUAGE_NOT_BLANK)
     @EnumNamePattern(regexp = "POLSKI|ANGIELSKI|WŁOSKI|FRANCUSKI|NIEMIECKI|HISZPAŃSKI", message = ValidationMessage.LANGUAGE_INVALID)
     private Language language = Language.POLSKI;
 
-    private boolean notification = true;
 
     private boolean proposedNews = true;
 
@@ -98,8 +93,6 @@ public class User {
     }
 
     public void setDefaultUserSettings(){
-        setDarkMode(true);
-        setNotification(true);
         setLanguage(Language.POLSKI);
         setProposedNews(true);
     }
@@ -152,28 +145,12 @@ public class User {
         this.userSites = userSites;
     }
 
-    public boolean isDarkMode() {
-        return darkMode;
-    }
-
-    public void setDarkMode(boolean darkMode) {
-        this.darkMode = darkMode;
-    }
-
     public Language getLanguage() {
         return language;
     }
 
     public void setLanguage(Language language) {
         this.language = language;
-    }
-
-    public boolean isNotification() {
-        return notification;
-    }
-
-    public void setNotification(boolean notification) {
-        this.notification = notification;
     }
 
     public boolean isProposedNews() {
@@ -200,27 +177,19 @@ public class User {
         this.roles.remove(role);
     }
 
-    public List<UserNewsLike> getUserLikes() {
-        return userLikes;
-    }
-
-    public void setUserLikes(List<UserNewsLike> userLikes) {
-        this.userLikes = userLikes;
-    }
-
-    public List<UserNewsDislike> getUserDislikes() {
-        return userDislikes;
-    }
-
-    public void setUserDislikes(List<UserNewsDislike> userNewsDislikes) {
-        this.userDislikes = userNewsDislikes;
-    }
-
-    public LocalDate getAddedDate() {
+    public LocalDateTime getAddedDate() {
         return addedDate;
     }
 
-    public void setAddedDate(LocalDate addedDate) {
+    public void setAddedDate(LocalDateTime addedDate) {
         this.addedDate = addedDate;
+    }
+
+    public List<UserNews> getUserNews() {
+        return userNews;
+    }
+
+    public void setUserNews(List<UserNews> userNews) {
+        this.userNews = userNews;
     }
 }
