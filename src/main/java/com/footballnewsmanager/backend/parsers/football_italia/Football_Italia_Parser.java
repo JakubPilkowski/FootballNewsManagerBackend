@@ -4,12 +4,14 @@ import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.models.*;
 import com.footballnewsmanager.backend.parsers.ParserHelper;
 import com.footballnewsmanager.backend.repositories.*;
+import com.footballnewsmanager.backend.services.UserService;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -24,6 +26,10 @@ public class Football_Italia_Parser {
     private final TagRepository tagRepository;
     private final TeamNewsRepository teamNewsRepository;
     private final NewsTagRepository newsTagRepository;
+    private final UserService userService;
+    private final UserRepository userRepository;
+    private final FavouriteTeamRepository favouriteTeamRepository;
+    private final UserNewsRepository userNewsRepository;
     private final List<String> italianTeams = new ArrayList<>(Arrays.asList(
             "Atalanta",
             "Benevento",
@@ -47,7 +53,7 @@ public class Football_Italia_Parser {
             "Verona"
     ));
 
-    public Football_Italia_Parser(SiteRepository siteRepository, NewsRepository newsRepository, TeamRepository teamRepository, MarkerRepository markerRepository, TagRepository tagRepository, TeamNewsRepository teamNewsRepository, NewsTagRepository newsTagRepository) {
+    public Football_Italia_Parser(SiteRepository siteRepository, NewsRepository newsRepository, TeamRepository teamRepository, MarkerRepository markerRepository, TagRepository tagRepository, TeamNewsRepository teamNewsRepository, NewsTagRepository newsTagRepository, UserService userService, UserRepository userRepository, FavouriteTeamRepository favouriteTeamRepository, UserNewsRepository userNewsRepository) {
         this.siteRepository = siteRepository;
         this.newsRepository = newsRepository;
         this.teamRepository = teamRepository;
@@ -55,9 +61,13 @@ public class Football_Italia_Parser {
         this.tagRepository = tagRepository;
         this.teamNewsRepository = teamNewsRepository;
         this.newsTagRepository = newsTagRepository;
+        this.userService = userService;
+        this.userRepository = userRepository;
+        this.favouriteTeamRepository = favouriteTeamRepository;
+        this.userNewsRepository = userNewsRepository;
     }
 
-    public void getNews(List<Marker> markers) {
+    public void getNews(List<Marker> markers, List<User> users) {
         Site site = siteRepository.findById(1L).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej Strony"));
         for (String italianTeam : italianTeams) {
             Document footballItaliaMainDoc;
@@ -71,7 +81,7 @@ public class Football_Italia_Parser {
                         String articleLink = footballItaliaSiteUrl + tmpNewsUrl;
                         try {
                             Document doc = Jsoup.connect(articleLink).get();
-                            parseNewsAndSave(site, doc, markers, newsId, articleLink);
+                            parseNewsAndSave(site, doc, markers, newsId, articleLink, users);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
@@ -84,12 +94,14 @@ public class Football_Italia_Parser {
     }
 
 
-    private void parseNewsAndSave(Site site, Document doc, List<Marker> markers, Long newsId, String newsUrl) {
+    private void parseNewsAndSave(Site site, Document doc, List<Marker> markers, Long newsId, String newsUrl, List<User> users) {
         String title = doc.getElementsByClass("title").text();
         String imgUrl = doc.getElementsByClass("story-image-wrapper").select("img").first().attr("src");
         String[] date = doc.getElementsByClass("date").html().split(" ");
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d yyyy", Locale.ENGLISH);
-        LocalDate localDate = LocalDate.parse(date[1] + " " + date[2] + " " + date[3], formatter);
+        LocalTime localTime = LocalTime.now();
+        String formattedLocalTime = localTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d yyyy HH:mm:ss", Locale.ENGLISH);
+        LocalDateTime localDate = LocalDateTime.parse(date[1] + " " + date[2] + " " + date[3]+ " " +formattedLocalTime, formatter);
         String content = doc.body().getElementsByClass("content").select("p").text();
         String footballItaliaEndNewsSyntax = "Watch Serie A live in the UK on Premier Sports for just £9.99 per month including live LaLiga, Eredivisie, Scottish Cup Football and more. Visit: https://www.premiersports.com/subscribenow";
         String endContent = content.replace(footballItaliaEndNewsSyntax, "");
@@ -103,5 +115,7 @@ public class Football_Italia_Parser {
             newsTagRepository.save(newsTag);
         }
         ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository, markerRepository, teamRepository);
+        ParserHelper.connectNewsWithUsers(users, news, teamNewsRepository,
+                favouriteTeamRepository, userNewsRepository);
     }
 }

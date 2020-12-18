@@ -13,7 +13,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -45,8 +45,8 @@ public class News {
     private String imageUrl;
 
     @NotNull(message = ValidationMessage.DATE_NOT_BLANK)
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate date;
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime date;
 
     @ManyToOne
     @JoinColumn(name = "site")
@@ -62,12 +62,8 @@ public class News {
     private List<TeamNews> teamNews = new ArrayList<>();
 
     @OneToMany(mappedBy = "news", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private List<UserNewsLike> userLikes = new ArrayList<>();
-
-    @OneToMany(mappedBy = "news", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private List<UserNewsDislike> userDislikes = new ArrayList<>();
+    @JsonIgnore()
+    private List<UserNews> userNews = new ArrayList<>();
 
     @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
     @JsonIgnore
@@ -80,10 +76,6 @@ public class News {
     @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
     @Min(value = 0, message = ValidationMessage.CLICKS_LESS_THAN_ZERO)
     private Long likes = 0L;
-
-    @NotNull(message = ValidationMessage.CLICKS_NOT_BLANK)
-    @Min(value = 0, message = ValidationMessage.CLICKS_LESS_THAN_ZERO)
-    private Long dislikes = 0L;
 
     private boolean highlighted = false;
 
@@ -103,11 +95,11 @@ public class News {
         this.newsUrl = newsUrl;
     }
 
-    public LocalDate getDate() {
+    public LocalDateTime getDate() {
         return date;
     }
 
-    public void setDate(LocalDate date) {
+    public void setDate(@NotNull LocalDateTime date) {
         this.date = date;
     }
 
@@ -175,15 +167,7 @@ public class News {
         this.tags = tags;
     }
 
-    public List<UserNewsLike> getUserLikes() {
-        return userLikes;
-    }
-
-    public void setUserLikes(List<UserNewsLike> userLikes) {
-        this.userLikes = userLikes;
-    }
-
-    public double getPopularity() {
+      public double getPopularity() {
         return popularity;
     }
 
@@ -201,22 +185,14 @@ public class News {
 
     public void measurePopularity(){
         setPopularity(getClicks()* Multipliers.CLICK_MULTIPLIER
-                +getLikes()* Multipliers.LIKED - getDislikes()*Multipliers.LIKED);
+                +getLikes()* Multipliers.LIKED);
     }
 
-    public List<UserNewsDislike> getUserDislikes() {
-        return userDislikes;
+    public List<UserNews> getUserNews() {
+        return userNews;
     }
 
-    public void setUserDislikes(List<UserNewsDislike> userDislikes) {
-        this.userDislikes = userDislikes;
-    }
-
-    public Long getDislikes() {
-        return dislikes;
-    }
-
-    public void setDislikes(Long dislikes) {
-        this.dislikes = dislikes;
+    public void setUserNews(List<UserNews> userNews) {
+        this.userNews = userNews;
     }
 }

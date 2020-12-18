@@ -1,32 +1,60 @@
 package com.footballnewsmanager.backend.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 import com.footballnewsmanager.backend.views.Views;
 
-import javax.persistence.Column;
+import javax.persistence.*;
+import javax.validation.constraints.Min;
 
+
+@Entity
 @JsonView(Views.Public.class)
 public class UserNews {
+
+
+    @Id
+    @GeneratedValue()
+    @JsonIgnore()
+    @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
+    private Long id;
+
+    @ManyToOne
     private News news;
-    private boolean isLiked;
-    private boolean isDisliked;
-    private boolean isVisited;
-    private boolean isBadgeVisited;
+
+    @ManyToOne
+    @JsonIgnore()
+    private User user;
+
+    private boolean liked =false;
+    private boolean inFavourites =false;
+    private boolean visited =false;
+    private boolean badged =false;
+
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public User getUser() {
+        return user;
+    }
 
     public boolean isLiked() {
-        return isLiked;
+        return liked;
     }
 
     public void setLiked(boolean liked) {
-        isLiked = liked;
-    }
-
-    public boolean isDisliked() {
-        return isDisliked;
-    }
-
-    public void setDisliked(boolean disliked) {
-        isDisliked = disliked;
+        this.liked = liked;
     }
 
     public News getNews() {
@@ -38,18 +66,26 @@ public class UserNews {
     }
 
     public boolean isVisited() {
-        return isVisited;
+        return visited;
     }
 
     public void setVisited(boolean visited) {
-        isVisited = visited;
+        this.visited = visited;
     }
 
-    public boolean isBadgeVisited() {
-        return isBadgeVisited;
+    public boolean isBadged() {
+        return badged;
     }
 
-    public void setBadgeVisited(boolean badgeVisited) {
-        isBadgeVisited = badgeVisited;
+    public void setBadged(boolean badged) {
+        this.badged = badged;
+    }
+
+    public boolean isInFavourites() {
+        return inFavourites;
+    }
+
+    public void setInFavourites(boolean inFavourites) {
+        this.inFavourites = inFavourites;
     }
 }

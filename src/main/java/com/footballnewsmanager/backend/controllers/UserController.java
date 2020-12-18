@@ -11,6 +11,7 @@ import com.footballnewsmanager.backend.exceptions.BadRequestException;
 import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.models.*;
 import com.footballnewsmanager.backend.repositories.*;
+import com.footballnewsmanager.backend.services.NewsService;
 import com.footballnewsmanager.backend.services.UserService;
 import com.footballnewsmanager.backend.validators.EnumNamePattern;
 import com.footballnewsmanager.backend.views.Views;
@@ -19,7 +20,6 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -53,8 +53,10 @@ public class UserController {
     private final SiteRepository siteRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserService userService;
+    private final NewsRepository newsRepository;
+    private final UserNewsRepository userNewsRepository;
 
-    public UserController(UserRepository userRepository, FavouriteTeamRepository favouriteTeamRepository, TeamRepository teamRepository, UserSiteRepository userSiteRepository, JwtTokenProvider tokenProvider, BlacklistTokenRepository blacklistTokenRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, UserService userService, SiteRepository siteRepository) {
+    public UserController(UserRepository userRepository, FavouriteTeamRepository favouriteTeamRepository, TeamRepository teamRepository, UserSiteRepository userSiteRepository, JwtTokenProvider tokenProvider, BlacklistTokenRepository blacklistTokenRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, UserService userService, SiteRepository siteRepository, NewsRepository newsRepository, UserNewsRepository userNewsRepository) {
         this.userRepository = userRepository;
         this.favouriteTeamRepository = favouriteTeamRepository;
         this.userSiteRepository = userSiteRepository;
@@ -64,6 +66,8 @@ public class UserController {
         this.userService = userService;
         this.teamRepository = teamRepository;
         this.siteRepository = siteRepository;
+        this.newsRepository = newsRepository;
+        this.userNewsRepository = userNewsRepository;
     }
 
     @GetMapping("")
@@ -154,12 +158,19 @@ public class UserController {
     @JsonView(Views.Public.class)
     public User changeUserSettings(@Valid @RequestBody UserSettingsRequest userSettingsRequest) {
         User user = userService.checkUserExistByTokenAndOnSuccess(userRepository, userFromDB -> {
-            userService.deleteRepoValuesIfUserExists(favouriteTeamRepository, userFromDB, new FavouriteTeam());
-            userService.deleteRepoValuesIfUserExists(userSiteRepository, userFromDB, new UserSite());
-            userService.updateUserTeamsOrSites(userSettingsRequest.getFavouriteTeams(), favouriteTeamRepository, new FavouriteTeam(), userFromDB);
-            userService.updateUserTeamsOrSites(userSettingsRequest.getChosenSites(), userSiteRepository, new UserSite(), userFromDB);
-            userFromDB.setNotification(userSettingsRequest.isNotifications());
-            userFromDB.setDarkMode(userSettingsRequest.isDarkMode());
+            for(Team teamFromRequest: userSettingsRequest.getFavouriteTeams()){
+                Team team = teamRepository.findById(teamFromRequest.getId()).orElseThrow(()-> new ResourceNotFoundException("Nie ma takiej drużyny"));
+                if(!favouriteTeamRepository.existsByUserAndTeam(userFromDB,team)){
+                    FavouriteTeam favouriteTeam = new FavouriteTeam();
+                    favouriteTeam.setTeam(team);
+                    favouriteTeam.setUser(userFromDB);
+                    team.setChosenAmount(team.getChosenAmount() + 1);
+                    team.measurePopularity();
+                    teamRepository.save(team);
+                    favouriteTeamRepository.save(favouriteTeam);
+                    NewsService.toggleNewsToFavourites(newsRepository, userNewsRepository, userFromDB, team, true);
+                }
+            }
             userFromDB.setLanguage(userSettingsRequest.getLanguage());
             userFromDB.setProposedNews(userSettingsRequest.isProposedNews());
             return userFromDB;
@@ -214,18 +225,6 @@ public class UserController {
     }
 
 
-    @PutMapping("me/notification={notification}")
-    public ResponseEntity<BaseResponse> toggleNotifications(@PathVariable("notification")
-                                                            @NotNull(message = ValidationMessage.NOTIFICATION_NOT_BLANK)
-                                                                    Boolean notification) {
-        userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
-            user.setNotification(notification);
-            userRepository.save(user);
-            return user;
-        });
-        return ResponseEntity.ok(new BaseResponse(true, "Zmiana ustawienia powiadomień"));
-    }
-
     @PutMapping("me/proposedNews={proposedNews}")
     public ResponseEntity<BaseResponse> toggleProposedNews(@PathVariable("proposedNews")
                                                            @NotNull(message = ValidationMessage.PROPOSED_NEWS_NOT_BLANK)
@@ -251,17 +250,6 @@ public class UserController {
         return ResponseEntity.ok(new BaseResponse(true, "Zmiana języka"));
     }
 
-    @PutMapping("me/darkMode={darkMode}")
-    public ResponseEntity<BaseResponse> toggleDarkMode(@PathVariable("darkMode")
-                                                       @NotNull(message = ValidationMessage.DARK_MODE_NOT_BLANK)
-                                                               Boolean darkMode) {
-        userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
-            user.setDarkMode(darkMode);
-            userRepository.save(user);
-            return user;
-        });
-        return ResponseEntity.ok(new BaseResponse(true, "Zmiana motywu"));
-    }
 
     @PutMapping("me/addTeams")
     @JsonView(Views.Public.class)
@@ -277,6 +265,8 @@ public class UserController {
                     team.measurePopularity();
                     teamRepository.save(team);
                     favouriteTeamRepository.save(favouriteTeam);
+                    NewsService.toggleNewsToFavourites(newsRepository, userNewsRepository,
+                            user, team, true);
                 }
             }
             return user;
@@ -297,6 +287,8 @@ public class UserController {
                 team.measurePopularity();
                 teamRepository.save(team);
                 favouriteTeamRepository.save(favouriteTeam);
+                NewsService.toggleNewsToFavourites(newsRepository, userNewsRepository,
+                        user, team, true);
                 return user;
             } else {
                 throw new BadRequestException("Podana drużyna jest już dodana!");
@@ -318,6 +310,8 @@ public class UserController {
                         team.setChosenAmount(team.getChosenAmount() - 1);
                         team.measurePopularity();
                         teamRepository.save(team);
+                        NewsService.toggleNewsToFavourites(newsRepository, userNewsRepository,
+                                user, team, false);
                     } catch (EmptyResultDataAccessException exception) {
                         throw new ResourceNotFoundException("Podany użytkownik nie ma polubionej danej drużyny!", exception);
                     }
@@ -338,6 +332,8 @@ public class UserController {
                 team.setChosenAmount(team.getChosenAmount() - 1);
                 team.measurePopularity();
                 teamRepository.save(team);
+                NewsService.toggleNewsToFavourites(newsRepository, userNewsRepository,
+                        user, team, false);
                 return user;
             } catch (EmptyResultDataAccessException exception) {
                 throw new ResourceNotFoundException("Podany użytkownik nie ma polubionej danej drużyny!", exception);

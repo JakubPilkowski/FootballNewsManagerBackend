@@ -5,11 +5,10 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.request.teams.TeamsFromTagsRequest;
 import com.footballnewsmanager.backend.api.response.BaseResponse;
 import com.footballnewsmanager.backend.api.response.TeamsResponse;
+import com.footballnewsmanager.backend.api.response.search.SearchResponse;
 import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.helpers.LeaguesHelper;
-import com.footballnewsmanager.backend.models.League;
-import com.footballnewsmanager.backend.models.Tag;
-import com.footballnewsmanager.backend.models.Team;
+import com.footballnewsmanager.backend.models.*;
 import com.footballnewsmanager.backend.repositories.LeagueRepository;
 import com.footballnewsmanager.backend.repositories.TeamRepository;
 import com.footballnewsmanager.backend.repositories.MarkerRepository;
@@ -25,6 +24,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.util.*;
 
@@ -90,10 +90,10 @@ public class TeamsController {
     }
 
 
-    @GetMapping(value = "hot", params = {"count"})
+    @GetMapping(value = "hot", params = {"page"})
     @JsonView(Views.Public.class)
-    public ResponseEntity<TeamsResponse> hotTeams(@RequestParam(value = "count", defaultValue = "5") @NotNull @Range(min = 5, max = 10) int count){
-        Pageable pageable = PageRequest.of(0,count, Sort.by(Sort.Direction.DESC, "popularity"));
+    public ResponseEntity<TeamsResponse> hotTeams(@RequestParam(value = "page", defaultValue = "0") @NotNull @Range(min = 0) int page){
+        Pageable pageable = PageRequest.of(page,20, Sort.by(Sort.Direction.DESC, "popularity"));
         Page<Team> teams = teamRepository.findAll(pageable);
         return ResponseEntity.ok(new TeamsResponse(true, "Popularne drużyny", teams.getContent()));
     }
@@ -108,14 +108,24 @@ public class TeamsController {
     }
 
     @GetMapping(value = "query={query}", params = {"page"})
-    public ResponseEntity<TeamsResponse> getTeamsByQuery(@RequestParam(value = "page", defaultValue = "0") @Min(value = 0) int page, @PathVariable("query") @NotNull() String query){
+    public ResponseEntity<SearchResponse> getTeamsByQuery(@RequestParam(value = "page", defaultValue = "0") @Min(value = 0) int page, @PathVariable("query") @NotNull() String query){
         Pageable pageable = PageRequest.of(page, 20, Sort.by(Sort.Direction.DESC, "popularity"));
         Page<Team> pages = teamRepository.findByNameContainsIgnoreCase(query, pageable).orElseThrow(()->new ResourceNotFoundException("Dla podanego hasła nie ma żadnej drużyny"));
         if(page +1 >pages.getTotalPages())
             throw new ResourceNotFoundException("Nie ma już więcej wyników");
         if(pages.getTotalElements()==0)
             throw new ResourceNotFoundException("Dla podanej frazy nie ma żadnej drużyny");
-        return ResponseEntity.ok(new TeamsResponse(true, "Znalezione drużyny", pages.getContent()));
+
+        List<SearchResult> results = new ArrayList<>();
+        for(Team team: pages.getContent()){
+            SearchResult searchResult = new SearchResult();
+            searchResult.setId(team.getId());
+            searchResult.setImgUrl(team.getLogoUrl());
+            searchResult.setName(team.getName());
+            searchResult.setType(SearchType.TEAM);
+            results.add(searchResult);
+        }
+        return ResponseEntity.ok(new SearchResponse(results));
     }
 
     //has role admin
