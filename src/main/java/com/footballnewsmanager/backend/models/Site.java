@@ -37,16 +37,18 @@ public class Site {
     @Size(min = 10, max = 150, message = ValidationMessage.SITE_DESCRIPTION_SIZE)
     private String description;
 
-    @JsonView(Views.Public.class)
-    private boolean highlighted = false;
+    @NotBlank(message = ValidationMessage.SITE_LANGUAGE_NOT_BLANK)
+    @Size(min = 2, max = 80, message = ValidationMessage.SITE_LANGUAGE_SIZE)
+    private String language;
+
 
     @JsonView(Views.Internal.class)
     private double popularity = 0;
 
-    @JsonView(Views.Internal.class)
+    @JsonView(Views.Public.class)
     private Long clicks = 0L;
 
-    @JsonView(Views.Internal.class)
+    @JsonView(Views.Public.class)
     private Long newsCount = 0L;
 
     @JsonView(Views.Internal.class)
@@ -84,15 +86,6 @@ public class Site {
 
     public void setLogoUrl(String logoUrl) {
         this.logoUrl = logoUrl;
-    }
-
-
-    public boolean isHighlighted() {
-        return highlighted;
-    }
-
-    public void setHighlighted(boolean highlighted) {
-        this.highlighted = highlighted;
     }
 
     public List<UserSite> getUserSites() {
@@ -163,5 +156,13 @@ public class Site {
 
     public void setSiteUrl(String siteUrl) {
         this.siteUrl = siteUrl;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
     }
 }

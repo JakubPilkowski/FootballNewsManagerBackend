@@ -27,11 +27,9 @@ import javax.transaction.Transactional;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 @RestController
 @RequestMapping("/news")
@@ -46,10 +44,10 @@ public class NewsController {
     private final UserService userService;
     private final MarkerRepository markerRepository;
     private final UserRepository userRepository;
-    private final FavouriteTeamRepository favouriteTeamRepository;
+    private final UserTeamRepository userTeamRepository;
     private final UserNewsRepository userNewsRepository;
 
-    public NewsController(Football_Italia_Parser footballItaliaParser, TransferyInfoParser transferyInfoParser, NewsRepository newsRepository, TeamRepository teamRepository, UserService userService, MarkerRepository markerRepository, UserRepository userRepository, FavouriteTeamRepository favouriteTeamRepository, UserNewsRepository userNewsRepository) {
+    public NewsController(Football_Italia_Parser footballItaliaParser, TransferyInfoParser transferyInfoParser, NewsRepository newsRepository, TeamRepository teamRepository, UserService userService, MarkerRepository markerRepository, UserRepository userRepository, UserTeamRepository userTeamRepository, UserNewsRepository userNewsRepository) {
         this.footballItaliaParser = footballItaliaParser;
         this.transferyInfoParser = transferyInfoParser;
         this.newsRepository = newsRepository;
@@ -57,28 +55,26 @@ public class NewsController {
         this.userService = userService;
         this.markerRepository = markerRepository;
         this.userRepository = userRepository;
-        this.favouriteTeamRepository = favouriteTeamRepository;
+        this.userTeamRepository = userTeamRepository;
         this.userNewsRepository = userNewsRepository;
     }
 
     @GetMapping(value = "", params = {"page"})
     @JsonView(Views.Internal.class)
-    public ResponseEntity<NewsResponse> getNewsForTeams(@RequestParam("page") int page) {
+    public ResponseEntity<NewsResponse> getNewsForTeams(@RequestParam("page") @Min(value = 0) int page) {
         NewsResponse newsResponse = new NewsResponse();
         userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
-            Pageable newsPageable = PageRequest.of(page, 15, Sort.by(Sort.Order.asc("badged"), Sort.Order.desc("news.date"),
-                    Sort.Order.desc("news.highlighted"), Sort.Order.desc("news.popularity")));
+            Pageable newsPageable = PageRequest.of(page, 15, Sort.by(Sort.Order.asc("badged"), Sort.Order.asc("visited"), Sort.Order.desc("news.date"), Sort.Order.desc("news.popularity")));
 
-            Page<UserNews> news = userNewsRepository.findByUserAndInFavouritesIsTrue(user, newsPageable)
-                    .orElseThrow(() -> new ResourceNotFoundException("Nie ma wiadomości dla wybranych drużyn"));
+            Page<UserNews> news = userNewsRepository.findByUserAndInFavouritesIsTrue(user, newsPageable);
             PaginationService.handlePaginationErrors(page, news);
-
             newsResponse.setUserNews(news.getContent());
             newsResponse.setPages(news.getTotalPages());
             newsResponse.setNewsCount(news.getTotalElements());
             Long count = userNewsRepository.countDistinctByUserAndInFavouritesIsTrueAndNewsDateAfter
                     (user, LocalDate.now().atStartOfDay());
             newsResponse.setNewsToday(count);
+
             return user;
         });
 
@@ -86,74 +82,22 @@ public class NewsController {
     }
 
 
-    @GetMapping(value = "all", params = {"page"})
+    @GetMapping(value = "all", params = {"page", "proposed"})
     @JsonView(Views.Internal.class)
-    public ResponseEntity<AllNewsResponse<BaseNewsAdjustment>> getNews(@RequestParam("page") @Min(value = 0) int page) {
-
-        AllNewsResponse<BaseNewsAdjustment> allNewsResponse = new AllNewsResponse<>();
+    public ResponseEntity<AllNewsResponse> getNews(@RequestParam("page") @Min(value = 0) int page,
+                                                   @RequestParam("proposed") boolean proposed) {
+        AllNewsResponse allNewsResponse = new AllNewsResponse();
 
         userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
-            List<Team> teams = new ArrayList<>();
-            List<FavouriteTeam> favouriteTeams = favouriteTeamRepository.findByUser(user)
-                    .orElse(new ArrayList<>());
+            Pageable pageable = PageRequest.of(page, 15, Sort.by(Sort.Order.asc("visited"), Sort.Order.desc("news.date"),Sort.Order.desc("news.popularity")));
 
-            for (FavouriteTeam favouriteTeam : favouriteTeams) {
-                teams.add(favouriteTeam.getTeam());
-            }
-
-            Pageable pageable = PageRequest.of(page, 15, Sort.by(Sort.Direction.DESC, "news.date",
-                    "news.highlighted", "news.popularity"));
-
-            Page<UserNews> news = userNewsRepository.findAllByUser(user, pageable)
-                    .orElseThrow(() -> new ResourceNotFoundException("Nie ma newsów dla użytkownika"));
+            Page<UserNews> news = userNewsRepository.findAllByUser(user, pageable);
             PaginationService.handlePaginationErrors(page, news);
 
-            switch ((page + 2) % 2) {
-                case 0:
-                    Pageable proposedNewsPageable = PageRequest.of(page, 1, Sort.by(Sort.Direction.DESC,
-                            "highlighted",
-                            "popularity"));
-                    Pageable pageable1 = PageRequest.of(0, Integer.MAX_VALUE);
-                    Page<News> allNewsForTeams = newsRepository.findDistinctByTeamNewsTeamIn(teams, pageable1).orElseThrow(() -> new ResourceNotFoundException(""));
-                    Page<Team> pageableTeamsForSelectedNews = teamRepository.findByTeamNewsNewsIn(allNewsForTeams.getContent(), pageable1).orElseThrow(() -> new ResourceNotFoundException(""));
-
-                    List<Team> teamsToRemove = new ArrayList<>();
-                    List<Team> teamsForSelectedNews = new ArrayList<>();
-                    teamsForSelectedNews.addAll(pageableTeamsForSelectedNews.getContent());
-
-                    for (Team team : teamsForSelectedNews) {
-                        for (Team requestTeam : teams) {
-                            if (requestTeam.getName().equals(team.getName())) {
-                                teamsToRemove.add(team);
-                            }
-                        }
-                    }
-                    for (Team teamToRemove : teamsToRemove) {
-                        teamsForSelectedNews.remove(teamToRemove);
-                    }
-                    Random random = new Random();
-                    System.out.println("Teams size" + teamsForSelectedNews.size());
-                    NewsExtras proposedNewsExtras;
-                    if(teamsForSelectedNews.size() > 0 ) {
-                        int index = random.nextInt(teamsForSelectedNews.size());
-                        Team randomizedTeam = teamsForSelectedNews.get(index);
-                        Page<News> proposedNews = newsRepository.findByTeamNewsTeam(randomizedTeam, proposedNewsPageable).orElseThrow(() -> new ResourceNotFoundException(""));
-                        proposedNewsExtras = new NewsExtras("To może ci się spodobać", NewsInfoType.PROPOSED_NEWS,
-                                proposedNews.getContent().get(0));
-                    }
-                    else{
-                        proposedNewsExtras = new NewsExtras("To może ci się spodobać", NewsInfoType.PROPOSED_NEWS,
-                                news.getContent().get(0).getNews());
-                    }
-                    allNewsResponse.setAdditionalContent(proposedNewsExtras);
-                    break;
-                case 1:
-                    Pageable teamsPageable = PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "popularity"));
-                    Page<Team> hotTeams = teamRepository.findAll(teamsPageable);
-                    TeamExtras teamExtras = new TeamExtras("Polecane drużyny", NewsInfoType.PROPOSED_TEAMS,
-                            hotTeams.getContent());
-                    allNewsResponse.setAdditionalContent(teamExtras);
-                    break;
+            if (proposed) {
+                Pageable teamsPageable = PageRequest.of(page, 5, Sort.by(Sort.Direction.DESC, "team.popularity", "team.id"));
+                Page<UserTeam> hotTeams = userTeamRepository.findByUserAndFavouriteIsFalse(user, teamsPageable);
+                allNewsResponse.setProposedTeams(hotTeams.getContent());
             }
             allNewsResponse.setPages(news.getTotalPages());
             allNewsResponse.setNewsCount(news.getTotalElements());
@@ -165,6 +109,20 @@ public class NewsController {
         });
 
         return ResponseEntity.ok().body(allNewsResponse);
+    }
+
+    @GetMapping(value = "/liked", params = {"page"})
+    @JsonView(Views.Public.class)
+    public ResponseEntity<NewsResponse> getLikedNews(@RequestParam("page") @Min(value = 0) int page) {
+        NewsResponse newsResponse = new NewsResponse();
+        userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
+            Pageable pageable = PageRequest.of(page, 20, Sort.by(Sort.Direction.DESC, "news.date"));
+            Page<UserNews> liked = userNewsRepository.findByUserAndLikedIsTrue(user, pageable);
+            newsResponse.setUserNews(liked.getContent());
+            newsResponse.setPages(liked.getTotalPages());
+            return user;
+        });
+        return ResponseEntity.ok(newsResponse);
     }
 
     @GetMapping("site={sid}/id={id}")
@@ -182,14 +140,15 @@ public class NewsController {
         NewsResponse newsResponse = new NewsResponse();
         Team team = teamRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej drużyny"));
         userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
-            Pageable pageable = PageRequest.of(page, 15, Sort.by(Sort.Direction.DESC, "date", "highlighted", "popularity"));
-            Page<News> news = newsRepository.findByTeamNewsTeam(team, pageable).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej newsów dla tej drużyny"));
             Pageable userNewsPageable = PageRequest.of(page, 15, Sort.by(Sort.Direction.DESC, "news.date",
-                    "news.highlighted", "news.popularity"));
-            PaginationService.handlePaginationErrors(page, news);
-            Page<UserNews> userNews = userNewsRepository.findByUserAndNewsIn(user, news.getContent(), userNewsPageable)
-                    .orElseThrow(() -> new ResourceNotFoundException("Nie ma wiadomości dla podanej drużyny"));
+                    "news.popularity"));
+            Page<UserNews> userNews = userNewsRepository.findByUserAndNewsTeamNewsTeam(user, team, userNewsPageable);
+            PaginationService.handlePaginationErrors(page, userNews);
             newsResponse.setUserNews(userNews.getContent());
+            newsResponse.setPages(userNews.getTotalPages());
+            newsResponse.setNewsCount(userNews.getTotalElements());
+            Long count = newsRepository.countDistinctByTeamNewsTeamAndDateAfter(team, LocalDate.now().atStartOfDay());
+            newsResponse.setNewsToday(count);
             return user;
         });
         return ResponseEntity.ok().body(newsResponse);
@@ -208,8 +167,7 @@ public class NewsController {
         userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
             Long count = userNewsRepository.countByUserAndInFavouritesIsTrue(user);
             Pageable pageable = PageRequest.of(0, count.intValue());
-            Page<UserNews> news = userNewsRepository.findByUserAndInFavouritesIsTrue(user, pageable)
-                    .orElseThrow(() -> new ResourceNotFoundException("Nie ma wiadomości"));
+            Page<UserNews> news = userNewsRepository.findByUserAndInFavouritesIsTrue(user, pageable);
             PaginationService.handlePaginationErrors(0, news);
             for (UserNews singleNews : news.getContent()) {
                 singleNews.setVisited(true);
@@ -222,22 +180,41 @@ public class NewsController {
         return ResponseEntity.ok(new BaseResponse(true, "Zaznaczono wszystkie jako przeczytane"));
     }
 
-    @GetMapping("notVisitedNewsAmount")
-    public ResponseEntity<BadgesResponse> getNotVisitedNewsAmount() {
-        AtomicReference<BadgesResponse> badgesResponse = new AtomicReference<>();
+//    @GetMapping("notVisitedNewsAmount")
+//    public ResponseEntity<BadgesResponse> getNotVisitedNewsAmount() {
+//        AtomicReference<BadgesResponse> badgesResponse = new AtomicReference<>();
+//        userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
+//            Long amount = userNewsRepository.countByUserAndInFavouritesIsTrueAndBadgedIsFalse(user);
+//            badgesResponse.set(new BadgesResponse(true, "Ilość nieprzeczytanych wiadomości", amount));
+//            return user;
+//        });
+//
+//        return ResponseEntity.ok(badgesResponse.get());
+//    }
+
+    @PutMapping("badge/site={sid}/id={id}")
+    public ResponseEntity<SingleNewsResponse> badgeNews(@PathVariable("sid") @Min(value = 0) Long sid,
+                                                        @PathVariable("id") @Min(value = 0) Long id) {
+        SingleNewsResponse singleNewsResponse = new SingleNewsResponse();
+        News news = newsRepository.findBySiteIdAndId(sid, id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej wiadomości"));
         userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
-            Long amount = userNewsRepository.countByUserAndInFavouritesIsTrueAndBadgedIsFalse(user);
-            badgesResponse.set(new BadgesResponse(true, "Ilość nieprzeczytanych wiadomości", amount));
+            UserNews userNews = userNewsRepository.findByUserAndNews(user, news)
+                    .orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej wiadomości"));
+            userNews.setVisited(true);
+            userNews.setBadged(true);
+            userNewsRepository.save(userNews);
+            singleNewsResponse.setNews(userNews);
+            singleNewsResponse.setType(SingleNewsType.MARK);
             return user;
         });
-
-        return ResponseEntity.ok(badgesResponse.get());
+        return ResponseEntity.ok(singleNewsResponse);
     }
+
 
     @PutMapping("visit/site={sid}/id={id}")
     public ResponseEntity<SingleNewsResponse> visitNews(@PathVariable("sid") @Min(value = 0) Long sid,
                                                         @PathVariable("id") @Min(value = 0) Long id) {
-        AtomicReference<SingleNewsResponse> singleNewsResponse = new AtomicReference<>();
+        SingleNewsResponse singleNewsResponse = new SingleNewsResponse();
         News news = newsRepository.findBySiteIdAndId(sid, id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej wiadomości"));
         userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
             UserNews userNews = userNewsRepository.findByUserAndNews(user, news)
@@ -252,28 +229,18 @@ public class NewsController {
                 }
                 userNewsRepository.save(userNews);
             }
-            singleNewsResponse.set(new SingleNewsResponse(true, "Odwiedzono wiadomość", userNews));
+            singleNewsResponse.setNews(userNews);
+            singleNewsResponse.setType(SingleNewsType.NEWS);
             return user;
         });
-        return ResponseEntity.ok(singleNewsResponse.get());
-    }
-
-    @PreAuthorize("hasAuthority('ADMIN')")
-    @PutMapping("highlight/site={sid}/id={id}")
-    public ResponseEntity<BaseResponse> highlightNews(@PathVariable("sid") @Min(value = 0) Long sid,
-                                                      @PathVariable("id") @Min(value = 0) Long id) {
-        News news = newsRepository.findBySiteIdAndId(sid, id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej wiadomości"));
-        news.setHighlighted(!news.isHighlighted());
-        newsRepository.save(news);
-        String message = news.isHighlighted() ? "Wyróżniono newsa" : "Wycofano wyróżnienie";
-        return ResponseEntity.ok(new BaseResponse(true, message));
+        return ResponseEntity.ok(singleNewsResponse);
     }
 
     @PutMapping("like/site={sid}/id={id}")
     @Transactional
     public ResponseEntity<SingleNewsResponse> likeNews(@PathVariable("sid") @Min(value = 0) Long sid,
                                                        @PathVariable("id") @Min(value = 0) Long id) {
-        AtomicReference<SingleNewsResponse> singleNewsResponse = new AtomicReference<>();
+        SingleNewsResponse singleNewsResponse = new SingleNewsResponse();
         News news = newsRepository.findBySiteIdAndId(sid, id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej wiadomości"));
         userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
             UserNews userNews = userNewsRepository.findByUserAndNews(user, news)
@@ -284,11 +251,11 @@ public class NewsController {
             news.measurePopularity();
             userNewsRepository.save(userNews);
             newsRepository.save(news);
-            String message = userNews.isLiked() ? "Poljakowano Wiadomość" : "Odlajkowano Wiadomość";
-            singleNewsResponse.set(new SingleNewsResponse(true, message, userNews));
+            singleNewsResponse.setNews(userNews);
+            singleNewsResponse.setType(SingleNewsType.LIKE);
             return user;
         });
-        return ResponseEntity.ok(singleNewsResponse.get());
+        return ResponseEntity.ok(singleNewsResponse);
     }
 
     @GetMapping(value = "hot", params = {"count"})
@@ -308,8 +275,8 @@ public class NewsController {
         Pageable newsPageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "date", "popularity"));
         Pageable teamPageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "popularity"));
 
-        Page<News> news = newsRepository.findByTitleContainsIgnoreCase(query, newsPageable).orElseThrow(() -> new ResourceNotFoundException("Dla podanego hasła nie ma żadnej drużyny"));
-        Page<Team> teams = teamRepository.findByNameContainsIgnoreCase(query, teamPageable).orElseThrow(() -> new ResourceNotFoundException("Dla podanego hasła nie ma żadnej drużyny"));
+        Page<News> news = newsRepository.findByTitleContainsIgnoreCase(query, newsPageable);
+        Page<Team> teams = teamRepository.findByNameContainsIgnoreCase(query, teamPageable);
 
         List<SearchResult> results = new ArrayList<>();
 
@@ -317,14 +284,14 @@ public class NewsController {
             SearchResult searchResult = new SearchResult();
             searchResult.setName(queryNews.getTitle());
             searchResult.setType(SearchType.NEWS);
-            searchResult.setId(queryNews.getSiteId() + queryNews.getId());
+            searchResult.setId(queryNews.getSiteId() + " " + queryNews.getId());
             searchResult.setImgUrl(queryNews.getImageUrl());
             searchResult.setNewsUrl(queryNews.getNewsUrl());
             results.add(searchResult);
         }
         for (Team team : teams) {
             SearchResult searchResult = new SearchResult();
-            searchResult.setId(team.getId());
+            searchResult.setId(String.valueOf(team.getId()));
             searchResult.setImgUrl(team.getLogoUrl());
             searchResult.setName(team.getName());
             searchResult.setNewsUrl("");
@@ -352,7 +319,7 @@ public class NewsController {
     @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/tmp")
     @Transactional()
-    public void deleteOldNews(){
+    public void deleteOldNews() {
 //        LocalDateTime localDateTime = LocalDateTime.now();
         LocalTime localTime = LocalTime.now();
         String formattedLocalTime = localTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));

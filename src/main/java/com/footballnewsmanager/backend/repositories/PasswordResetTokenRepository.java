@@ -9,8 +9,6 @@ import java.util.Optional;
 
 public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Long> {
 
-    Optional<PasswordResetToken> findByUser(User user);
-
     boolean existsByUserAndExpiryDateGreaterThan(User user, Date date);
 
     Optional<PasswordResetToken> findByToken(String token);

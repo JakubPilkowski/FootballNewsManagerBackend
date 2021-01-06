@@ -10,5 +10,4 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 import java.util.Optional;
 
 public interface SiteRepository extends PagingAndSortingRepository<Site, Long> {
-    Optional<Page<Site>> findByNameContainsIgnoreCase(String query, Pageable pageable);
 }

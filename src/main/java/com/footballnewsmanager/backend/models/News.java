@@ -77,7 +77,6 @@ public class News {
     @Min(value = 0, message = ValidationMessage.CLICKS_LESS_THAN_ZERO)
     private Long likes = 0L;
 
-    private boolean highlighted = false;
 
     public String getTitle() {
         return title;
@@ -109,14 +108,6 @@ public class News {
 
     public void setClicks(Long clicks) {
         this.clicks = clicks;
-    }
-
-    public boolean isHighlighted() {
-        return highlighted;
-    }
-
-    public void setHighlighted(boolean highlighted) {
-        this.highlighted = highlighted;
     }
 
     public Site getSite() {

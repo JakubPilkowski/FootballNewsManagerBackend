@@ -27,10 +27,10 @@ public class TransferyInfoParser {
     private final NewsTagRepository newsTagRepository;
     private final UserService userService;
     private final UserRepository userRepository;
-    private final FavouriteTeamRepository favouriteTeamRepository;
+    private final UserTeamRepository userTeamRepository;
     private final UserNewsRepository userNewsRepository;
 
-    public TransferyInfoParser(SiteRepository siteRepository, NewsRepository newsRepository, TeamRepository teamRepository, MarkerRepository markerRepository, TagRepository tagRepository, TeamNewsRepository teamNewsRepository, NewsTagRepository newsTagRepository, UserService userService, UserRepository userRepository, FavouriteTeamRepository favouriteTeamRepository, UserNewsRepository userNewsRepository) {
+    public TransferyInfoParser(SiteRepository siteRepository, NewsRepository newsRepository, TeamRepository teamRepository, MarkerRepository markerRepository, TagRepository tagRepository, TeamNewsRepository teamNewsRepository, NewsTagRepository newsTagRepository, UserService userService, UserRepository userRepository, UserTeamRepository userTeamRepository, UserNewsRepository userNewsRepository) {
         this.siteRepository = siteRepository;
         this.newsRepository = newsRepository;
         this.teamRepository = teamRepository;
@@ -40,7 +40,7 @@ public class TransferyInfoParser {
         this.newsTagRepository = newsTagRepository;
         this.userService = userService;
         this.userRepository = userRepository;
-        this.favouriteTeamRepository = favouriteTeamRepository;
+        this.userTeamRepository = userTeamRepository;
         this.userNewsRepository = userNewsRepository;
     }
 
@@ -77,18 +77,20 @@ public class TransferyInfoParser {
         String date = articleElement.select("time").text().substring(0, 19);
         LocalDateTime localDate = LocalDateTime.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String articleTagSection = doc.getElementsByClass("d-inline").text();
-        Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, articleTagSection, tagRepository));
-        News news = ParserHelper.saveNews(site, newsId, title, newsUrl, imgUrl, localDate, siteRepository, newsRepository);
-        for (Tag tag :
-                tagSet) {
-            NewsTag newsTag = new NewsTag();
-            newsTag.setNews(news);
-            newsTag.setTag(tag);
-            newsTagRepository.save(newsTag);
+        LocalDateTime currentLocalDate = LocalDateTime.now().minusDays(7);
+        if (localDate.isAfter(currentLocalDate)) {
+            Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, articleTagSection, tagRepository));
+            News news = ParserHelper.saveNews(site, newsId, title, newsUrl, imgUrl, localDate, siteRepository, newsRepository);
+            for (Tag tag :
+                    tagSet) {
+                NewsTag newsTag = new NewsTag();
+                newsTag.setNews(news);
+                newsTag.setTag(tag);
+                newsTagRepository.save(newsTag);
+            }
+            ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository, markerRepository, teamRepository);
+            ParserHelper.connectNewsWithUsers(users, news, teamNewsRepository,
+                    userTeamRepository, userNewsRepository);
         }
-        ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository, markerRepository, teamRepository);
-        ParserHelper.connectNewsWithUsers(users, news, teamNewsRepository,
-                favouriteTeamRepository, userNewsRepository);
     }
-
 }
