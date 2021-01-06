@@ -4,10 +4,8 @@ package com.footballnewsmanager.backend.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
-import com.footballnewsmanager.backend.validators.EnumNamePattern;
 import com.footballnewsmanager.backend.views.Views;
 import org.hibernate.annotations.NaturalId;
-import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import javax.validation.constraints.*;
@@ -52,13 +50,14 @@ public class User {
     private String password;
 
     @NotNull(message = ValidationMessage.DATE_NOT_BLANK)
-//    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime addedDate;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<FavouriteTeam> favouriteTeams = new ArrayList<>();
+    @JsonIgnore()
+    private List<UserTeam> userTeams = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore()
     private List<UserSite> userSites = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -73,14 +72,6 @@ public class User {
     private Set<Role> roles = new HashSet<>();
 
 
-    @Enumerated(EnumType.STRING)
-    @NotNull(message = ValidationMessage.LANGUAGE_NOT_BLANK)
-    @EnumNamePattern(regexp = "POLSKI|ANGIELSKI|WŁOSKI|FRANCUSKI|NIEMIECKI|HISZPAŃSKI", message = ValidationMessage.LANGUAGE_INVALID)
-    private Language language = Language.POLSKI;
-
-
-    private boolean proposedNews = true;
-
     public User() {
 
     }
@@ -90,11 +81,6 @@ public class User {
         this.username = username;
         this.email = email;
         this.password = password;
-    }
-
-    public void setDefaultUserSettings(){
-        setLanguage(Language.POLSKI);
-        setProposedNews(true);
     }
 
     public Long getId() {
@@ -129,12 +115,12 @@ public class User {
         this.password = password;
     }
 
-    public List<FavouriteTeam> getFavouriteTeams() {
-        return favouriteTeams;
+    public List<UserTeam> getUserTeams() {
+        return userTeams;
     }
 
-    public void setFavouriteTeams(List<FavouriteTeam> favourtiteTeams) {
-        this.favouriteTeams = favourtiteTeams;
+    public void setUserTeams(List<UserTeam> userTeams) {
+        this.userTeams = userTeams;
     }
 
     public List<UserSite> getUserSites() {
@@ -143,22 +129,6 @@ public class User {
 
     public void setUserSites(List<UserSite> userSites) {
         this.userSites = userSites;
-    }
-
-    public Language getLanguage() {
-        return language;
-    }
-
-    public void setLanguage(Language language) {
-        this.language = language;
-    }
-
-    public boolean isProposedNews() {
-        return proposedNews;
-    }
-
-    public void setProposedNews(boolean proposedSites) {
-        this.proposedNews = proposedSites;
     }
 
     public Set<Role> getRoles() {

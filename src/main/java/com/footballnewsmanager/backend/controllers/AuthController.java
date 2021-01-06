@@ -18,6 +18,7 @@ import com.footballnewsmanager.backend.models.*;
 import com.footballnewsmanager.backend.repositories.*;
 import com.footballnewsmanager.backend.services.NewsService;
 import com.footballnewsmanager.backend.services.ResetPasswordService;
+import com.footballnewsmanager.backend.services.TeamsService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -60,10 +61,12 @@ public class AuthController extends ValidationExceptionHandlers {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final NewsRepository newsRepository;
     private final UserNewsRepository userNewsRepository;
+    private final TeamRepository teamRepository;
+    private final UserTeamRepository userTeamRepository;
 
     public AuthController(JavaMailSender javaMailSender, AuthenticationManager authenticationManager, BlacklistTokenRepository blacklistTokenRepository,
                           UserRepository userRepository, RoleRepository roleRepository,
-                          PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider, ResetPasswordService resetPasswordService, PasswordResetTokenRepository passwordResetTokenRepository, NewsRepository newsRepository, UserNewsRepository userNewsRepository) {
+                          PasswordEncoder passwordEncoder, JwtTokenProvider tokenProvider, ResetPasswordService resetPasswordService, PasswordResetTokenRepository passwordResetTokenRepository, NewsRepository newsRepository, UserNewsRepository userNewsRepository, TeamRepository teamRepository, UserTeamRepository userTeamRepository) {
         this.javaMailSender = javaMailSender;
         this.authenticationManager = authenticationManager;
         this.blacklistTokenRepository = blacklistTokenRepository;
@@ -75,6 +78,8 @@ public class AuthController extends ValidationExceptionHandlers {
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.newsRepository = newsRepository;
         this.userNewsRepository = userNewsRepository;
+        this.teamRepository = teamRepository;
+        this.userTeamRepository = userTeamRepository;
     }
 
     @PostMapping("/login")
@@ -122,6 +127,7 @@ public class AuthController extends ValidationExceptionHandlers {
         User result = userRepository.save(user);
 
         NewsService.initNewsForUser(newsRepository, userNewsRepository, result);
+        TeamsService.initTeamsForUser(result, teamRepository, userTeamRepository);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentContextPath().path("/users/{username}")
@@ -152,7 +158,7 @@ public class AuthController extends ValidationExceptionHandlers {
     @PostMapping("sendResetPassToken/{email}")
     public ResponseEntity<BaseResponse> resetPasswordSendTokenToMail(@PathVariable("email") @NotBlank(message = ValidationMessage.EMAIL_NOT_BLANK) @Size(max = 40, message = ValidationMessage.EMAIL_SIZE) @Email(message = ValidationMessage.EMAIL_VALID) String email) {
         userRepository.findByEmail(email).map(user -> {
-//            if (!passwordResetTokenRepository.existsByUserAndExpiryDateGreaterThan(user, Calendar.getInstance().getTime())) {
+            if (!passwordResetTokenRepository.existsByUserAndExpiryDateGreaterThan(user, Calendar.getInstance().getTime())) {
                 String token = UUID.randomUUID().toString();
                 PasswordResetToken passwordResetToken = new PasswordResetToken();
                 passwordResetToken.setToken(token);
@@ -168,7 +174,7 @@ public class AuthController extends ValidationExceptionHandlers {
                     e.printStackTrace();
                 }
                 javaMailSender.send(mailMessage);
-//            } else throw new BadRequestException("token został już wygenerowany");
+            } else throw new BadRequestException("token został już wygenerowany");
             return user;
         }).orElseThrow(() -> new ResourceNotFoundException("Nie znaleziono konta na podany adres mailowy!"));
         return ResponseEntity.ok(new BaseResponse(true, "wysłano mail z tokenem aktywacyjnym"));

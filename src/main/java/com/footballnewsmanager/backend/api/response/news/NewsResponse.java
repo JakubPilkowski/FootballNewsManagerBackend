@@ -9,11 +9,10 @@ import java.util.List;
 @JsonView(Views.Public.class)
 public class NewsResponse {
 
-
-    private List<UserNews> userNews;
     private Long newsCount;
     private Long newsToday;
     private int pages;
+    private List<UserNews> userNews;
 
     public List<UserNews> getUserNews() {
         return userNews;

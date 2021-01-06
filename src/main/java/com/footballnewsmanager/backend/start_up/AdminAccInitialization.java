@@ -1,8 +1,10 @@
 package com.footballnewsmanager.backend.start_up;
 
+import com.footballnewsmanager.backend.helpers.LeaguesHelper;
 import com.footballnewsmanager.backend.models.Role;
 import com.footballnewsmanager.backend.models.User;
 import com.footballnewsmanager.backend.repositories.RoleRepository;
+import com.footballnewsmanager.backend.repositories.TeamRepository;
 import com.footballnewsmanager.backend.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -28,9 +30,9 @@ public class AdminAccInitialization implements CommandLineRunner {
     @Value("${app.adminPassword}")
     private String password;
 
-    private PasswordEncoder passwordEncoder;
-    private RoleRepository roleRepository;
-    private UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final RoleRepository roleRepository;
+    private final UserRepository userRepository;
 
     public AdminAccInitialization(PasswordEncoder passwordEncoder, RoleRepository roleRepository, UserRepository userRepository) {
         this.passwordEncoder = passwordEncoder;
@@ -42,7 +44,6 @@ public class AdminAccInitialization implements CommandLineRunner {
     public void run(String... args) {
         if (!userRepository.existsByUsernameOrEmail(username, email)) {
             User user = new User(username, email, password);
-
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
             LocalDateTime localDateTime = LocalDateTime.now();
             String format = dateTimeFormatter.format(localDateTime);

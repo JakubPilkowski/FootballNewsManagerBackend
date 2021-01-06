@@ -1,9 +1,12 @@
 package com.footballnewsmanager.backend.parsers;
 
+import com.footballnewsmanager.backend.exceptions.BadRequestException;
 import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.models.*;
 import com.footballnewsmanager.backend.repositories.*;
-import com.footballnewsmanager.backend.services.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -35,13 +38,14 @@ public class ParserHelper {
 
     public static void connectNewsWithUsers(
             List<User> users, News news,
-            TeamNewsRepository teamNewsRepository, FavouriteTeamRepository favouriteTeamRepository,
+            TeamNewsRepository teamNewsRepository, UserTeamRepository userTeamRepository,
             UserNewsRepository userNewsRepository) {
 
         for (User user : users) {
             boolean exists = false;
-            List<FavouriteTeam> teams = favouriteTeamRepository.findByUser(user).orElse(new ArrayList<>());
-            for (FavouriteTeam team : teams) {
+            Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
+            Page<UserTeam> teams = userTeamRepository.findByUserAndFavouriteIsTrue(user, pageable);
+            for (UserTeam team : teams) {
                 if (teamNewsRepository.existsByTeamAndNews(team.getTeam(), news)) {
                     exists = true;
                     break;
@@ -84,9 +88,6 @@ public class ParserHelper {
         news.setImageUrl(imgUrl);
         news.setSite(site);
         news.setDate(localDate);
-        if (newsId % 25 == 0) {
-            news.setHighlighted(true);
-        }
         site.setNewsCount(site.getNewsCount() + 1);
         site.measurePopularity();
         siteRepository.save(site);

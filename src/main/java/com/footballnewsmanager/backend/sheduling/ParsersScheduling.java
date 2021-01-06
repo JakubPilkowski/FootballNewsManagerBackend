@@ -32,7 +32,7 @@ public class ParsersScheduling {
         this.userRepository = userRepository;
     }
 
-    @Scheduled(cron = "0 0,30 8-23 * * *")
+    @Scheduled(cron = "0 0,20,40 0,8-23 * * *")
     public void uploadTransferyInfoNews() {
         List<Marker> markerList = markerRepository.findAll();
         List<User> users = userRepository.findAll();

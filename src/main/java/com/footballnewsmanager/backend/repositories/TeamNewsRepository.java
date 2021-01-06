@@ -12,9 +12,6 @@ import java.util.Optional;
 
 public interface TeamNewsRepository extends PagingAndSortingRepository<TeamNews, Long> {
 
-
     boolean existsByTeamAndNews(Team team, News news);
-
-    Optional<Page<TeamNews>> findByTeam(Team team, Pageable pageable);
 
 }

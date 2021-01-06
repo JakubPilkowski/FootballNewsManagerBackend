@@ -1,19 +1,19 @@
 package com.footballnewsmanager.backend.api.response.leagues;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.response.BaseResponse;
 import com.footballnewsmanager.backend.models.League;
+import com.footballnewsmanager.backend.views.Views;
 
 import java.util.List;
 
-public class LeagueResponse extends BaseResponse {
+@JsonView(Views.Public.class)
+public class LeagueResponse {
+    private List<League> leagues;
 
-
-    public LeagueResponse(boolean success, String message, List<League> leagues) {
-        super(success, message);
+    public LeagueResponse(List<League> leagues) {
         this.leagues = leagues;
     }
-
-    private List<League> leagues;
 
     public List<League> getLeagues() {
         return leagues;

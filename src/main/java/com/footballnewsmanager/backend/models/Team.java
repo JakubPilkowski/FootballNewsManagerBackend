@@ -1,6 +1,5 @@
 package com.footballnewsmanager.backend.models;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
@@ -35,7 +34,6 @@ public class Team {
 
 
     @Min(value = 0, message = ValidationMessage.POPULARITY_LESS_THAN_ZERO)
-    @JsonView(Views.Internal.class)
     private double popularity = 0f;
 
     @Min(value = 0, message = ValidationMessage.POPULARITY_LESS_THAN_ZERO)
@@ -64,7 +62,7 @@ public class Team {
 
     @OneToMany(mappedBy = "team")
     @JsonIgnore
-    private List<FavouriteTeam> userTeams = new ArrayList<>();
+    private List<UserTeam> userTeams = new ArrayList<>();
 
     public Long getId() {
         return id;
@@ -114,11 +112,11 @@ public class Team {
         this.teamNews = teamNews;
     }
 
-    public List<FavouriteTeam> getUserTeams() {
+    public List<UserTeam> getUserTeams() {
         return userTeams;
     }
 
-    public void setUserTeams(List<FavouriteTeam> userTeams) {
+    public void setUserTeams(List<UserTeam> userTeams) {
         this.userTeams = userTeams;
     }
 

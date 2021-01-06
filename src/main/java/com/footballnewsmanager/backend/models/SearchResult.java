@@ -7,7 +7,7 @@ import com.footballnewsmanager.backend.views.Views;
 public class SearchResult {
 
     private String name;
-    private Long id;
+    private String id;
     private SearchType type;
     private String newsUrl;
     private String imgUrl;
@@ -20,11 +20,11 @@ public class SearchResult {
         this.name = name;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

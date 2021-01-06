@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
 import com.footballnewsmanager.backend.api.request.user_settings.*;
 import com.footballnewsmanager.backend.api.response.BaseResponse;
+import com.footballnewsmanager.backend.api.response.profile.UserProfileResponse;
 import com.footballnewsmanager.backend.auth.JwtTokenProvider;
 import com.footballnewsmanager.backend.auth.UserPrincipal;
 import com.footballnewsmanager.backend.exceptions.BadRequestException;
@@ -13,13 +14,9 @@ import com.footballnewsmanager.backend.models.*;
 import com.footballnewsmanager.backend.repositories.*;
 import com.footballnewsmanager.backend.services.NewsService;
 import com.footballnewsmanager.backend.services.UserService;
-import com.footballnewsmanager.backend.validators.EnumNamePattern;
 import com.footballnewsmanager.backend.views.Views;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -45,7 +42,7 @@ public class UserController {
     private String username;
 
     private final UserRepository userRepository;
-    private final FavouriteTeamRepository favouriteTeamRepository;
+    private final UserTeamRepository userTeamRepository;
     private final UserSiteRepository userSiteRepository;
     private final BlacklistTokenRepository blacklistTokenRepository;
     private final RoleRepository roleRepository;
@@ -56,9 +53,9 @@ public class UserController {
     private final NewsRepository newsRepository;
     private final UserNewsRepository userNewsRepository;
 
-    public UserController(UserRepository userRepository, FavouriteTeamRepository favouriteTeamRepository, TeamRepository teamRepository, UserSiteRepository userSiteRepository, JwtTokenProvider tokenProvider, BlacklistTokenRepository blacklistTokenRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, UserService userService, SiteRepository siteRepository, NewsRepository newsRepository, UserNewsRepository userNewsRepository) {
+    public UserController(UserRepository userRepository, UserTeamRepository userTeamRepository, TeamRepository teamRepository, UserSiteRepository userSiteRepository, JwtTokenProvider tokenProvider, BlacklistTokenRepository blacklistTokenRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, UserService userService, SiteRepository siteRepository, NewsRepository newsRepository, UserNewsRepository userNewsRepository) {
         this.userRepository = userRepository;
-        this.favouriteTeamRepository = favouriteTeamRepository;
+        this.userTeamRepository = userTeamRepository;
         this.userSiteRepository = userSiteRepository;
         this.blacklistTokenRepository = blacklistTokenRepository;
         this.roleRepository = roleRepository;
@@ -131,11 +128,17 @@ public class UserController {
 
     @GetMapping("me")
     @JsonView(Views.Public.class)
-    public User getMyProfile() {
+    public ResponseEntity<UserProfileResponse> getMyProfile() {
         Long id = ((UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId();
-        return userRepository.findById(id).orElseThrow(() ->
+        User user = userRepository.findById(id).orElseThrow(() ->
                 new ResourceNotFoundException("Nie ma takiego użytkownika")
         );
+
+        Long likes = userNewsRepository.countDistinctByUserAndLikedIsTrue(user);
+        Long favouritesCount = userTeamRepository.countByUserAndFavouriteIsTrue(user);
+        UserProfileResponse userProfileResponse = new UserProfileResponse(user, likes, favouritesCount);
+
+        return ResponseEntity.ok(userProfileResponse);
     }
 
     @DeleteMapping("me")
@@ -158,54 +161,50 @@ public class UserController {
     @JsonView(Views.Public.class)
     public User changeUserSettings(@Valid @RequestBody UserSettingsRequest userSettingsRequest) {
         User user = userService.checkUserExistByTokenAndOnSuccess(userRepository, userFromDB -> {
-            for(Team teamFromRequest: userSettingsRequest.getFavouriteTeams()){
-                Team team = teamRepository.findById(teamFromRequest.getId()).orElseThrow(()-> new ResourceNotFoundException("Nie ma takiej drużyny"));
-                if(!favouriteTeamRepository.existsByUserAndTeam(userFromDB,team)){
-                    FavouriteTeam favouriteTeam = new FavouriteTeam();
-                    favouriteTeam.setTeam(team);
-                    favouriteTeam.setUser(userFromDB);
-                    team.setChosenAmount(team.getChosenAmount() + 1);
-                    team.measurePopularity();
-                    teamRepository.save(team);
-                    favouriteTeamRepository.save(favouriteTeam);
-                    NewsService.toggleNewsToFavourites(newsRepository, userNewsRepository, userFromDB, team, true);
-                }
+            for (Team teamFromRequest : userSettingsRequest.getFavouriteTeams()) {
+                Team team = teamRepository.findById(teamFromRequest.getId()).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej drużyny"));
+                UserTeam userTeam = userTeamRepository.findByUserAndTeam(userFromDB, team)
+                        .orElse(new UserTeam());
+                userTeam.setFavourite(!userTeam.isFavourite());
+                team.setChosenAmount(team.getChosenAmount() + 1);
+                team.measurePopularity();
+                teamRepository.save(team);
+                userTeamRepository.save(userTeam);
+                NewsService.addNewsToFavourites(userNewsRepository, userFromDB, team);
             }
-            userFromDB.setLanguage(userSettingsRequest.getLanguage());
-            userFromDB.setProposedNews(userSettingsRequest.isProposedNews());
             return userFromDB;
         });
         userRepository.save(user);
         return user;
     }
 
-    @PostMapping("me/email")
-    public ResponseEntity<BaseResponse> changeEmail(@Valid @RequestBody EmailChangeRequest emailChangeRequest) {
-        User user = userService.checkUserExistByTokenAndOnSuccess(userRepository, userFromDB -> {
-            if (emailChangeRequest.getOldCredential().equals(userFromDB.getEmail())) {
-                if (!userRepository.existsByEmail(emailChangeRequest.getNewCredential())) {
-                    userFromDB.setEmail(emailChangeRequest.getNewCredential());
-                    return userFromDB;
-                } else throw new BadRequestException("Na podany adres email jest już utworzone konto!");
-            } else throw new BadRequestException("Podany adres email jest nieprawidłowy!");
-        });
-        userRepository.save(user);
-        return ResponseEntity.ok(new BaseResponse(true, "Poprawnie zmieniono adres mailowy!"));
-    }
-
-    @PostMapping("me/username")
-    public ResponseEntity<BaseResponse> changeUsername(@Valid @RequestBody UsernameChangeRequest usernameChangeRequest) {
-        User user = userService.checkUserExistByTokenAndOnSuccess(userRepository, userFromDB -> {
-            if (usernameChangeRequest.getOldCredential().equals(userFromDB.getUsername())) {
-                if (!userRepository.existsByUsername(usernameChangeRequest.getNewCredential())) {
-                    userFromDB.setUsername(usernameChangeRequest.getNewCredential());
-                    return userFromDB;
-                } else throw new BadRequestException("Podana nazwa użytkownika jest już zajęta!");
-            } else throw new BadRequestException("Nieprawidłowa nazwa użytkownika!");
-        });
-        userRepository.save(user);
-        return ResponseEntity.ok(new BaseResponse(true, "Poprawnie zmieniono nazwę użytkownika!"));
-    }
+//    @PostMapping("me/email")
+//    public ResponseEntity<BaseResponse> changeEmail(@Valid @RequestBody EmailChangeRequest emailChangeRequest) {
+//        User user = userService.checkUserExistByTokenAndOnSuccess(userRepository, userFromDB -> {
+//            if (emailChangeRequest.getOldCredential().equals(userFromDB.getEmail())) {
+//                if (!userRepository.existsByEmail(emailChangeRequest.getNewCredential())) {
+//                    userFromDB.setEmail(emailChangeRequest.getNewCredential());
+//                    return userFromDB;
+//                } else throw new BadRequestException("Na podany adres email jest już utworzone konto!");
+//            } else throw new BadRequestException("Podany adres email jest nieprawidłowy!");
+//        });
+//        userRepository.save(user);
+//        return ResponseEntity.ok(new BaseResponse(true, "Poprawnie zmieniono adres mailowy!"));
+//    }
+//
+//    @PostMapping("me/username")
+//    public ResponseEntity<BaseResponse> changeUsername(@Valid @RequestBody UsernameChangeRequest usernameChangeRequest) {
+//        User user = userService.checkUserExistByTokenAndOnSuccess(userRepository, userFromDB -> {
+//            if (usernameChangeRequest.getOldCredential().equals(userFromDB.getUsername())) {
+//                if (!userRepository.existsByUsername(usernameChangeRequest.getNewCredential())) {
+//                    userFromDB.setUsername(usernameChangeRequest.getNewCredential());
+//                    return userFromDB;
+//                } else throw new BadRequestException("Podana nazwa użytkownika jest już zajęta!");
+//            } else throw new BadRequestException("Nieprawidłowa nazwa użytkownika!");
+//        });
+//        userRepository.save(user);
+//        return ResponseEntity.ok(new BaseResponse(true, "Poprawnie zmieniono nazwę użytkownika!"));
+//    }
 
 
     @PostMapping("me/password")
@@ -225,121 +224,52 @@ public class UserController {
     }
 
 
-    @PutMapping("me/proposedNews={proposedNews}")
-    public ResponseEntity<BaseResponse> toggleProposedNews(@PathVariable("proposedNews")
-                                                           @NotNull(message = ValidationMessage.PROPOSED_NEWS_NOT_BLANK)
-                                                                   Boolean proposedNews) {
-        userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
-            user.setProposedNews(proposedNews);
-            userRepository.save(user);
-            return user;
-        });
-        return ResponseEntity.ok(new BaseResponse(true, "Zmiana ustawienia polecanych newsów"));
-    }
-
-    @PutMapping("me/language={language}")
-    public ResponseEntity<BaseResponse> changeLanguage(@PathVariable("language")
-                                                       @NotNull(message = ValidationMessage.LANGUAGE_NOT_BLANK)
-                                                       @EnumNamePattern(regexp = "POLSKI|ANGIELSKI|WŁOSKI|FRANCUSKI|NIEMIECKI|HISZPAŃSKI",
-                                                               message = ValidationMessage.LANGUAGE_INVALID) Language language) {
-        userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
-            user.setLanguage(language);
-            userRepository.save(user);
-            return user;
-        });
-        return ResponseEntity.ok(new BaseResponse(true, "Zmiana języka"));
-    }
+//    @PutMapping("me/toggleTeams")
+//    @JsonView(Views.Public.class)
+//    public User addTeams(@RequestBody TeamsRequest teamsRequest) {
+//        return userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
+//            for (Team teamFromRequest : teamsRequest.getTeams()) {
+//                Team team = teamRepository.findById(teamFromRequest.getId()).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej drużyny"));
+//                UserTeam userTeam = userTeamRepository.findByUserAndTeam(user, team)
+//                        .orElse(new UserTeam());
+//                userTeam.setFavourite(!userTeam.isFavourite());
+//                Long amount = team.getChosenAmount();
+//                team.setChosenAmount(userTeam.isFavourite() ? amount + 1 : amount - 1);
+//                team.measurePopularity();
+//                teamRepository.save(team);
+//                userTeamRepository.save(userTeam);
+//                NewsService.toggleNewsToFavourites(newsRepository, userNewsRepository,
+//                        user, team, true);
+//            }
+//            return user;
+//        });
+//    }
 
 
-    @PutMapping("me/addTeams")
+    @PutMapping("me/toggleTeam/{id}")
     @JsonView(Views.Public.class)
-    public User addTeams(@RequestBody TeamsRequest teamsRequest){
-        return userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
-            for(Team teamFromRequest: teamsRequest.getTeams()){
-                Team team = teamRepository.findById(teamFromRequest.getId()).orElseThrow(()-> new ResourceNotFoundException("Nie ma takiej drużyny"));
-                if(!favouriteTeamRepository.existsByUserAndTeam(user,team)){
-                    FavouriteTeam favouriteTeam = new FavouriteTeam();
-                    favouriteTeam.setTeam(team);
-                    favouriteTeam.setUser(user);
-                    team.setChosenAmount(team.getChosenAmount() + 1);
-                    team.measurePopularity();
-                    teamRepository.save(team);
-                    favouriteTeamRepository.save(favouriteTeam);
-                    NewsService.toggleNewsToFavourites(newsRepository, userNewsRepository,
-                            user, team, true);
-                }
-            }
-            return user;
-        });
-    }
-
-
-    @PutMapping("me/addTeam/{id}")
-    @JsonView(Views.Public.class)
-    public User addTeam(@PathVariable("id") @NotNull @Min(value = 0) Long id) {
-        return userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
+    public ResponseEntity<UserTeam> addTeam(@PathVariable("id") @NotNull @Min(value = 0) Long id) {
+        AtomicReference<UserTeam> userTeam = new AtomicReference<>();
+        userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
             Team team = teamRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej drużyny"));
-            if (!favouriteTeamRepository.findByUserAndTeam(user, team).isPresent()) {
-                FavouriteTeam favouriteTeam = new FavouriteTeam();
-                favouriteTeam.setTeam(team);
-                favouriteTeam.setUser(user);
-                team.setChosenAmount(team.getChosenAmount() + 1);
-                team.measurePopularity();
-                teamRepository.save(team);
-                favouriteTeamRepository.save(favouriteTeam);
-                NewsService.toggleNewsToFavourites(newsRepository, userNewsRepository,
-                        user, team, true);
-                return user;
-            } else {
-                throw new BadRequestException("Podana drużyna jest już dodana!");
-            }
-        });
-    }
+            userTeam.set(userTeamRepository.findByUserAndTeam(user, team)
+                    .orElseThrow(() -> new BadRequestException("Podana drużyna jest już dodana!")));
+            userTeam.get().setFavourite(!userTeam.get().isFavourite());
+            Long amount = team.getChosenAmount();
+            team.setChosenAmount(userTeam.get().isFavourite() ? amount + 1 : amount - 1);
+            team.measurePopularity();
+            if (userTeam.get().isFavourite()) NewsService.addNewsToFavourites(userNewsRepository, user, team);
+            else NewsService.deleteNewsFromFavourites(userNewsRepository, teamRepository, user, team);
+            teamRepository.save(team);
+            userTeamRepository.save(userTeam.get());
 
 
-    @DeleteMapping("me/removeTeams")
-    @JsonView(Views.Public.class)
-    @Transactional
-    public User removeTeams(@RequestBody TeamsRequest teamsRequest){
-        return userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
-            for(Team teamFromRequest: teamsRequest.getTeams()){
-                Team team = teamRepository.findById(teamFromRequest.getId()).orElseThrow(()-> new ResourceNotFoundException("Nie ma takiej drużyny"));
-                if(favouriteTeamRepository.existsByUserAndTeam(user,team)){
-                    try {
-                        favouriteTeamRepository.deleteByUserAndTeam(user, team);
-                        team.setChosenAmount(team.getChosenAmount() - 1);
-                        team.measurePopularity();
-                        teamRepository.save(team);
-                        NewsService.toggleNewsToFavourites(newsRepository, userNewsRepository,
-                                user, team, false);
-                    } catch (EmptyResultDataAccessException exception) {
-                        throw new ResourceNotFoundException("Podany użytkownik nie ma polubionej danej drużyny!", exception);
-                    }
-                }
-            }
             return user;
         });
+        return ResponseEntity.ok(userTeam.get());
     }
 
-    @DeleteMapping("me/removeTeam/{id}")
-    @JsonView(Views.Public.class)
-    @Transactional
-    public User removeTeam(@PathVariable("id") @NotNull @Min(value = 0) Long id) {
-        Team team = teamRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej drużyny"));
-        return userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
-            try {
-                favouriteTeamRepository.deleteByUserAndTeam(user, team);
-                team.setChosenAmount(team.getChosenAmount() - 1);
-                team.measurePopularity();
-                teamRepository.save(team);
-                NewsService.toggleNewsToFavourites(newsRepository, userNewsRepository,
-                        user, team, false);
-                return user;
-            } catch (EmptyResultDataAccessException exception) {
-                throw new ResourceNotFoundException("Podany użytkownik nie ma polubionej danej drużyny!", exception);
-            }
-        });
-    }
+    //pomyślimy, może na sam koniec będzie taka opcja
 
     @PutMapping("me/addSite/{id}")
     @JsonView(Views.Public.class)
@@ -350,7 +280,7 @@ public class UserController {
                 UserSite userSite = new UserSite();
                 userSite.setSite(site);
                 userSite.setUser(user);
-                site.setChosenAmount(site.getChosenAmount()+1);
+                site.setChosenAmount(site.getChosenAmount() + 1);
                 site.measurePopularity();
                 siteRepository.save(site);
                 userSiteRepository.save(userSite);
@@ -370,7 +300,7 @@ public class UserController {
             try {
                 Site site = siteRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej strony!"));
                 userSiteRepository.deleteByUserAndSite(user, site);
-                site.setChosenAmount(site.getChosenAmount()-1);
+                site.setChosenAmount(site.getChosenAmount() - 1);
                 site.measurePopularity();
                 siteRepository.save(site);
                 return user;

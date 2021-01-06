@@ -5,13 +5,11 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
-import com.footballnewsmanager.backend.validators.EnumNamePattern;
 import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.*;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +38,6 @@ public class League {
 
     @Enumerated(EnumType.STRING)
     @NotBlank(message = ValidationMessage.LEAGUE_TYPE_NOT_BLANK)
-    @EnumNamePattern(regexp = "LIGA|REPREZENTACJA", message = ValidationMessage.LEAGUE_TYPE_INVALID)
     private LeagueType type;
 
     @OneToMany(mappedBy = "league")

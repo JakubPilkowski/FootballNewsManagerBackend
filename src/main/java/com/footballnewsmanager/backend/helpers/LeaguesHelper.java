@@ -6,12 +6,8 @@ import com.footballnewsmanager.backend.api.api_sports.CountryResponse;
 import com.footballnewsmanager.backend.api.api_sports.TeamResponse;
 import com.footballnewsmanager.backend.api.google_translate.TranslateRequest;
 import com.footballnewsmanager.backend.api.google_translate.TranslateResponse;
-import com.footballnewsmanager.backend.models.League;
-import com.footballnewsmanager.backend.models.Marker;
-import com.footballnewsmanager.backend.models.Team;
-import com.footballnewsmanager.backend.repositories.LeagueRepository;
-import com.footballnewsmanager.backend.repositories.MarkerRepository;
-import com.footballnewsmanager.backend.repositories.TeamRepository;
+import com.footballnewsmanager.backend.models.*;
+import com.footballnewsmanager.backend.repositories.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -24,16 +20,20 @@ public class LeaguesHelper {
     private final LeagueRepository leagueRepository;
     private final TeamRepository teamRepository;
     private final MarkerRepository markerRepository;
+    private final UserRepository userRepository;
+    private final UserTeamRepository userTeamRepository;
     private Iterator<League> iterator;
     private Iterator<TeamResponse> teamsIterator;
     private Iterator<CountryResponse> countriesIterator;
     private WebClient apiSportWebClient;
     private WebClient googleTranslateApi;
 
-    public LeaguesHelper(LeagueRepository leagueRepository, TeamRepository teamRepository, MarkerRepository markerRepository) {
+    public LeaguesHelper(LeagueRepository leagueRepository, TeamRepository teamRepository, MarkerRepository markerRepository, UserRepository userRepository, UserTeamRepository userTeamRepository) {
         this.leagueRepository = leagueRepository;
         this.teamRepository = teamRepository;
         this.markerRepository = markerRepository;
+        this.userRepository = userRepository;
+        this.userTeamRepository = userTeamRepository;
     }
 
     public Mono<ApiSportTeamsResponse> getTeamsFromLeague(WebClient apiSportWebClient, int leagueId) {
@@ -81,8 +81,11 @@ public class LeaguesHelper {
                     team.setLeague(league);
                     team.setLogoUrl(teamResponse.getTeam().getLogo());
                     teamRepository.save(team);
+                    List<Marker> markers = new ArrayList<>();
                     for (String name : markersList)
-                        addMarker(name, team);
+                        markers.add(addMarker(name, team));
+                    markerRepository.saveAll(markers);
+                    connectUsersWithTeam(team);
                     if (teamsIterator.hasNext()) {
                         fetchTeamsFromTranslateApi(teamsIterator.next(), league);
                     } else if (iterator.hasNext()) {
@@ -112,9 +115,11 @@ public class LeaguesHelper {
                         team.setLeague(league);
                         team.setLogoUrl(countryResponse.getFlag());
                         teamRepository.save(team);
-
+                        List<Marker> markerList = new ArrayList<>();
                         for (String name : teamMarkers)
-                            addMarker(name, team);
+                            markerList.add(addMarker(name, team));
+                        markerRepository.saveAll(markerList);
+                        connectUsersWithTeam(team);
                         if (countriesIterator.hasNext()) {
                             fetchCountriesFromTranslateApi(countriesIterator.next(), league);
                         } else if (iterator.hasNext()) {
@@ -149,7 +154,7 @@ public class LeaguesHelper {
 
     public void updateTeams() {
         apiSportWebClient = WebClient.create("https://v3.football.api-sports.io");
-        googleTranslateApi = WebClient.create("https://translation.googleapis.com/language/translate/v2?key=AIzaSyDMRqEVIopgCrTZrQtomuztXr3GZx4ZrgU");
+        googleTranslateApi = WebClient.create("https://translation.googleapis.com/language/translate/v2?key=AIzaSyDtvSVg7RueDM_blJGdWqEb0_X9NRQV_GI");
         List<League> leagues = leagueRepository.findAll();
         teamRepository.deleteAll();
         markerRepository.deleteAll();
@@ -187,11 +192,11 @@ public class LeaguesHelper {
     }
 
 
-    public void addMarker(String value, Team team) {
-        Marker additionalMarker = new Marker();
-        additionalMarker.setName(value);
-        additionalMarker.setTeam(team);
-        markerRepository.save(additionalMarker);
+    public Marker addMarker(String value, Team team) {
+        Marker marker = new Marker();
+        marker.setName(value);
+        marker.setTeam(team);
+        return marker;
     }
 
 
@@ -226,7 +231,7 @@ public class LeaguesHelper {
             case "bordeaux":
                 repairedValue = "Bordeaux";
                 break;
-            case "Ładny":
+            case "Miły":
                 repairedValue = "Nice";
                 break;
             case "Wilki":
@@ -272,5 +277,18 @@ public class LeaguesHelper {
                 repairedValue = translatedValue;
         }
         return repairedValue;
+    }
+
+    public void connectUsersWithTeam(Team team){
+        List<User> users = userRepository.findAll();
+
+        List<UserTeam> userTeams = new ArrayList<>();
+        for(User user: users){
+            UserTeam userTeam = new UserTeam();
+            userTeam.setUser(user);
+            userTeam.setTeam(team);
+            userTeams.add(userTeam);
+        }
+        userTeamRepository.saveAll(userTeams);
     }
 }

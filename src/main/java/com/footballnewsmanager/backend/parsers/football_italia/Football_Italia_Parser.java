@@ -28,7 +28,7 @@ public class Football_Italia_Parser {
     private final NewsTagRepository newsTagRepository;
     private final UserService userService;
     private final UserRepository userRepository;
-    private final FavouriteTeamRepository favouriteTeamRepository;
+    private final UserTeamRepository userTeamRepository;
     private final UserNewsRepository userNewsRepository;
     private final List<String> italianTeams = new ArrayList<>(Arrays.asList(
             "Atalanta",
@@ -53,7 +53,7 @@ public class Football_Italia_Parser {
             "Verona"
     ));
 
-    public Football_Italia_Parser(SiteRepository siteRepository, NewsRepository newsRepository, TeamRepository teamRepository, MarkerRepository markerRepository, TagRepository tagRepository, TeamNewsRepository teamNewsRepository, NewsTagRepository newsTagRepository, UserService userService, UserRepository userRepository, FavouriteTeamRepository favouriteTeamRepository, UserNewsRepository userNewsRepository) {
+    public Football_Italia_Parser(SiteRepository siteRepository, NewsRepository newsRepository, TeamRepository teamRepository, MarkerRepository markerRepository, TagRepository tagRepository, TeamNewsRepository teamNewsRepository, NewsTagRepository newsTagRepository, UserService userService, UserRepository userRepository, UserTeamRepository userTeamRepository, UserNewsRepository userNewsRepository) {
         this.siteRepository = siteRepository;
         this.newsRepository = newsRepository;
         this.teamRepository = teamRepository;
@@ -63,7 +63,7 @@ public class Football_Italia_Parser {
         this.newsTagRepository = newsTagRepository;
         this.userService = userService;
         this.userRepository = userRepository;
-        this.favouriteTeamRepository = favouriteTeamRepository;
+        this.userTeamRepository = userTeamRepository;
         this.userNewsRepository = userNewsRepository;
     }
 
@@ -101,21 +101,24 @@ public class Football_Italia_Parser {
         LocalTime localTime = LocalTime.now();
         String formattedLocalTime = localTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d yyyy HH:mm:ss", Locale.ENGLISH);
-        LocalDateTime localDate = LocalDateTime.parse(date[1] + " " + date[2] + " " + date[3]+ " " +formattedLocalTime, formatter);
+        LocalDateTime localDate = LocalDateTime.parse(date[1] + " " + date[2] + " " + date[3] + " " + formattedLocalTime, formatter);
         String content = doc.body().getElementsByClass("content").select("p").text();
         String footballItaliaEndNewsSyntax = "Watch Serie A live in the UK on Premier Sports for just £9.99 per month including live LaLiga, Eredivisie, Scottish Cup Football and more. Visit: https://www.premiersports.com/subscribenow";
         String endContent = content.replace(footballItaliaEndNewsSyntax, "");
-        Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, endContent, tagRepository));
-        News news = ParserHelper.saveNews(site, newsId, title, newsUrl, imgUrl, localDate, siteRepository, newsRepository);
-        for (Tag tag :
-                tagSet) {
-            NewsTag newsTag = new NewsTag();
-            newsTag.setNews(news);
-            newsTag.setTag(tag);
-            newsTagRepository.save(newsTag);
+        LocalDateTime currentLocalDate = LocalDateTime.now().minusDays(7);
+        if (localDate.isAfter(currentLocalDate)) {
+            Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, endContent, tagRepository));
+            News news = ParserHelper.saveNews(site, newsId, title, newsUrl, imgUrl, localDate, siteRepository, newsRepository);
+            for (Tag tag :
+                    tagSet) {
+                NewsTag newsTag = new NewsTag();
+                newsTag.setNews(news);
+                newsTag.setTag(tag);
+                newsTagRepository.save(newsTag);
+            }
+            ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository, markerRepository, teamRepository);
+            ParserHelper.connectNewsWithUsers(users, news, teamNewsRepository,
+                    userTeamRepository, userNewsRepository);
         }
-        ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository, markerRepository, teamRepository);
-        ParserHelper.connectNewsWithUsers(users, news, teamNewsRepository,
-                favouriteTeamRepository, userNewsRepository);
     }
 }

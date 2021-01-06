@@ -12,33 +12,19 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public interface NewsRepository extends PagingAndSortingRepository<News, Long> {
 
 
     boolean existsBySiteIdAndId(Long siteId, Long id);
 
-    boolean existsBySiteIdAndIdAndDateBefore(Long siteId, Long id,LocalDate date);
-
     void deleteByDateLessThan(LocalDateTime localDateTime);
 
     Optional<News> findBySiteIdAndId(Long sid, Long lid);
 
-    Optional<Page<News>> findByTeamNewsTeam(Team team, Pageable pageable);
+    Page<News> findByTitleContainsIgnoreCase(String query, Pageable pageable);
 
-    Optional<Page<News>> findByTitleContainsIgnoreCase(String query, Pageable pageable);
+    Long countDistinctByTeamNewsTeamAndDateAfter(Team team, LocalDateTime localDateTime);
 
-    Optional<Page<News>> findDistinctByTeamNewsTeamIn(List<Team> teams, Pageable pageable);
-
-    boolean existsByTeamNewsTeamIn(List<Team> teams);
-
-    Long countDistinctByTeamNewsTeamInAndDateAfter(List<Team> teams, LocalDateTime localDate);
-
-    Long countDistinctByDate(LocalDate date);
-
-    Long countDistinctByTeamNewsTeamInAndDateAfter(List<Team>teams, LocalDate date);
-
-    Page<News> findDistinctByTeamNewsTeam(Team team, Pageable pageable);
-
-    Long countDistinctByTeamNewsTeam(Team team);
 }

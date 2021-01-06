@@ -8,13 +8,18 @@ import com.footballnewsmanager.backend.views.Views;
 import java.util.List;
 
 @JsonView(Views.Public.class)
-public class SitesResponse extends BaseResponse {
+public class SitesResponse {
 
+    private Long pages;
     private List<Site> sites;
 
-    public SitesResponse(boolean success, String message, List<Site> sites) {
-        super(success, message);
+    public SitesResponse(List<Site> sites, Long pages) {
         this.sites = sites;
+        this.pages = pages;
+    }
+
+    public Long getPages() {
+        return pages;
     }
 
     public List<Site> getSites() {
