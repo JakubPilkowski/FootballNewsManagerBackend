@@ -8,8 +8,14 @@ INSERT INTO public.sites(id, description,language , popularity, clicks, news_cou
  'https://www.football-italia.net','Football Italia'),
 (2, 'Strona oferująca dużą bazę informacji na temat najnowszych transferów', 'Polski',0,0,0,0,'https://transfery.info/img/logo/logo.png',
 'https://transfery.info','Transfery.info'),
-(3, 'Strona poświęcona newsom sportowym z całego świata', 'Polski',0,0,0,0,'https://bi.im-g.pl/im/0/24188/m24188910.png',
-'https://www.sport.pl/sport-hp/0,0.html','Sport.pl')
+(3, 'Strona poświęcona najważniejszymi wiadomościami sportowymi.', 'Polski',0,0,0,0,'https://bi.im-g.pl/im/0/24188/m24188910.png',
+'https://www.sport.pl/sport-hp/0,0.html','Sport.pl'),
+(4, 'Jedna z największych stron w Polsce poświęcona newsom sportowym. Zawiera newsy z całego świata.', 'Polski',0,0,0,0,'' ||
+ 'https://v.wpimg.pl/ODU5LnBuYCU0VzpdbQ5tMHcPbgcrV2NmIBd2TG0Nend6QjwNJhthNDkaPwk1BWB8NlF-XCNGeSJiAnpacEx9dWUHfgh3F3hzYgJ-CHpAdmolWytMPw==',
+'https://sportowefakty.wp.pl/pilka-nozna','WP Sportowe Fakty'),
+(5, 'Jedna z największych stron w Polsce poświęcona newsom sportowym. Zawiera newsy z całego świata.', 'Polski',0,0,0,0,'' ||
+'https://sgs.iplsc.com/interia-logo-hd.png',
+'https://sport.interia.pl/pilka-nozna','Interia')
 ON CONFLICT DO NOTHING;
 -- Ligi
 INSERT INTO public.leagues(id,apisportid, name, logo_url, type) VALUES
