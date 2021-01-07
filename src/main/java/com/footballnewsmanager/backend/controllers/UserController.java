@@ -224,28 +224,6 @@ public class UserController {
     }
 
 
-//    @PutMapping("me/toggleTeams")
-//    @JsonView(Views.Public.class)
-//    public User addTeams(@RequestBody TeamsRequest teamsRequest) {
-//        return userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
-//            for (Team teamFromRequest : teamsRequest.getTeams()) {
-//                Team team = teamRepository.findById(teamFromRequest.getId()).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej drużyny"));
-//                UserTeam userTeam = userTeamRepository.findByUserAndTeam(user, team)
-//                        .orElse(new UserTeam());
-//                userTeam.setFavourite(!userTeam.isFavourite());
-//                Long amount = team.getChosenAmount();
-//                team.setChosenAmount(userTeam.isFavourite() ? amount + 1 : amount - 1);
-//                team.measurePopularity();
-//                teamRepository.save(team);
-//                userTeamRepository.save(userTeam);
-//                NewsService.toggleNewsToFavourites(newsRepository, userNewsRepository,
-//                        user, team, true);
-//            }
-//            return user;
-//        });
-//    }
-
-
     @PutMapping("me/toggleTeam/{id}")
     @JsonView(Views.Public.class)
     public ResponseEntity<UserTeam> addTeam(@PathVariable("id") @NotNull @Min(value = 0) Long id) {
@@ -262,14 +240,13 @@ public class UserController {
             else NewsService.deleteNewsFromFavourites(userNewsRepository, teamRepository, user, team);
             teamRepository.save(team);
             userTeamRepository.save(userTeam.get());
-
-
             return user;
         });
         return ResponseEntity.ok(userTeam.get());
     }
 
-    //pomyślimy, może na sam koniec będzie taka opcja
+    //na razie nie, aplikacja jest za mała i ta opcja nie ma na tę chwile sensu,
+    // w przyszłości przy obsłudze wielojęzykowości i dużej ilości stron ma to sens
 
     @PutMapping("me/addSite/{id}")
     @JsonView(Views.Public.class)
