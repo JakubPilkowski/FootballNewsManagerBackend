@@ -52,15 +52,6 @@ public class TeamsController {
         this.userRepository = userRepository;
     }
 
-//    @GetMapping(value = "", params = {"page"})
-//    @JsonView(Views.Internal.class)
-//    public ResponseEntity<TeamsResponse> teams(@RequestParam(value = "page", defaultValue = "0") @Min(value = 0) int page) {
-//        Pageable pageable = PageRequest.of(page, 20, Sort.by(Sort.Direction.ASC, "name"));
-//        Page<Team> teams = teamRepository.findAll(pageable);
-//        if (page + 1 > teams.getTotalPages()) throw new ResourceNotFoundException("Nie ma już więcej wyników");
-//        return ResponseEntity.ok().body(new TeamsResponse(true, "Drużyny", teams.getContent()));
-//    }
-
     @GetMapping(value = "league={id}", params = {"page"})
     @JsonView(Views.Internal.class)
     public ResponseEntity<TeamsResponse> teamsByLeague(@RequestParam(value = "page", defaultValue = "0") @Min(value = 0) int page,
@@ -74,18 +65,12 @@ public class TeamsController {
 
             Page<UserTeam> teams = userTeamRepository.findByUserAndTeamLeague(user, league, pageable);
             PaginationService.handlePaginationErrors(page, teams);
+            teamsResponse.setPages(teams.getTotalPages());
             teamsResponse.setTeams(teams.getContent());
             return user;
         });
         return ResponseEntity.ok(teamsResponse);
     }
-
-//    @GetMapping("{id}")
-//    @JsonView(Views.Internal.class)
-//    public ResponseEntity<TeamsResponse> teamById(@PathVariable("id") @Min(value = 1) Long id){
-//        Team team  = teamRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("Nie ma takiej drużyny!"));
-//        return ResponseEntity.ok(new TeamsResponse(Collections.singletonList(team)));
-//    }
 
 
     @GetMapping(value = "/favouriteTeams")
@@ -102,7 +87,6 @@ public class TeamsController {
 
             PaginationService.handlePaginationErrors(0, teams);
             teamsResponse.setTeams(teams.getContent());
-
             return user;
         });
 
@@ -127,7 +111,7 @@ public class TeamsController {
 
             Pageable userTeamsPageable = PageRequest.of(0, names.size(), Sort.by(Sort.Direction.DESC, "team.popularity"));
 
-            Page<UserTeam> userTeams = userTeamRepository.findByUserAndTeamIn(user, teams.getContent(),userTeamsPageable);
+            Page<UserTeam> userTeams = userTeamRepository.findByUserAndTeamIn(user, teams.getContent(), userTeamsPageable);
 
             teamsResponse.setTeams(userTeams.getContent());
             return user;
@@ -163,27 +147,6 @@ public class TeamsController {
         teamRepository.save(team);
         return ResponseEntity.ok(new BaseResponse(true, "Dodano kliknięcie"));
     }
-
-//    @GetMapping(value = "query={query}", params = {"page"})
-//    public ResponseEntity<SearchResponse> getTeamsByQuery(@RequestParam(value = "page", defaultValue = "0") @Min(value = 0) int page, @PathVariable("query") @NotNull() String query) {
-//        Pageable pageable = PageRequest.of(page, 20, Sort.by(Sort.Direction.DESC, "popularity"));
-//        Page<Team> pages = teamRepository.findByNameContainsIgnoreCase(query, pageable).orElseThrow(() -> new ResourceNotFoundException("Dla podanego hasła nie ma żadnej drużyny"));
-//        if (page + 1 > pages.getTotalPages())
-//            throw new ResourceNotFoundException("Nie ma już więcej wyników");
-//        if (pages.getTotalElements() == 0)
-//            throw new ResourceNotFoundException("Dla podanej frazy nie ma żadnej drużyny");
-//
-//        List<SearchResult> results = new ArrayList<>();
-//        for (Team team : pages.getContent()) {
-//            SearchResult searchResult = new SearchResult();
-//            searchResult.setId(String.valueOf(team.getId()));
-//            searchResult.setImgUrl(team.getLogoUrl());
-//            searchResult.setName(team.getName());
-//            searchResult.setType(SearchType.TEAM);
-//            results.add(searchResult);
-//        }
-//        return ResponseEntity.ok(new SearchResponse(results));
-//    }
 
     //has role admin
     @PreAuthorize("hasAuthority('SUPER_ADMIN')")

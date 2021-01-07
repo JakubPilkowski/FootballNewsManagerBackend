@@ -95,7 +95,8 @@ public class NewsController {
             PaginationService.handlePaginationErrors(page, news);
 
             if (proposed) {
-                Pageable teamsPageable = PageRequest.of(page, 5, Sort.by(Sort.Direction.DESC, "team.popularity", "team.id"));
+                Long count = userTeamRepository.countByUserAndFavouriteIsFalse(user);
+                Pageable teamsPageable = PageRequest.of((int) ((page+count) % count), 5, Sort.by(Sort.Direction.DESC, "team.popularity", "team.id"));
                 Page<UserTeam> hotTeams = userTeamRepository.findByUserAndFavouriteIsFalse(user, teamsPageable);
                 allNewsResponse.setProposedTeams(hotTeams.getContent());
             }
