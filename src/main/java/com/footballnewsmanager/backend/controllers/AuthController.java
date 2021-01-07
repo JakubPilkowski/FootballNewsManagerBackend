@@ -174,7 +174,7 @@ public class AuthController extends ValidationExceptionHandlers {
                     e.printStackTrace();
                 }
                 javaMailSender.send(mailMessage);
-            } else throw new BadRequestException("token został już wygenerowany");
+            } else throw new BadRequestException("Token został już wygenerowany");
             return user;
         }).orElseThrow(() -> new ResourceNotFoundException("Nie znaleziono konta na podany adres mailowy!"));
         return ResponseEntity.ok(new BaseResponse(true, "wysłano mail z tokenem aktywacyjnym"));

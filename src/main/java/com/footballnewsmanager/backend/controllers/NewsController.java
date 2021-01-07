@@ -180,18 +180,6 @@ public class NewsController {
         return ResponseEntity.ok(new BaseResponse(true, "Zaznaczono wszystkie jako przeczytane"));
     }
 
-//    @GetMapping("notVisitedNewsAmount")
-//    public ResponseEntity<BadgesResponse> getNotVisitedNewsAmount() {
-//        AtomicReference<BadgesResponse> badgesResponse = new AtomicReference<>();
-//        userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
-//            Long amount = userNewsRepository.countByUserAndInFavouritesIsTrueAndBadgedIsFalse(user);
-//            badgesResponse.set(new BadgesResponse(true, "Ilość nieprzeczytanych wiadomości", amount));
-//            return user;
-//        });
-//
-//        return ResponseEntity.ok(badgesResponse.get());
-//    }
-
     @PutMapping("badge/site={sid}/id={id}")
     public ResponseEntity<SingleNewsResponse> badgeNews(@PathVariable("sid") @Min(value = 0) Long sid,
                                                         @PathVariable("id") @Min(value = 0) Long id) {
@@ -289,13 +277,16 @@ public class NewsController {
             searchResult.setNewsUrl(queryNews.getNewsUrl());
             results.add(searchResult);
         }
+        User user = userService.checkUserExistByTokenAndOnSuccess(userRepository, user1 -> user1);
         for (Team team : teams) {
+            UserTeam userTeam = userTeamRepository.findByUserAndTeam(user,team).orElse(new UserTeam());
             SearchResult searchResult = new SearchResult();
             searchResult.setId(String.valueOf(team.getId()));
             searchResult.setImgUrl(team.getLogoUrl());
             searchResult.setName(team.getName());
             searchResult.setNewsUrl("");
             searchResult.setType(SearchType.TEAM);
+            searchResult.setFavourite(userTeam.isFavourite());
             results.add(searchResult);
         }
 

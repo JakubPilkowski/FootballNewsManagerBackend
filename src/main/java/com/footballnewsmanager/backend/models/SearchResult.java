@@ -11,6 +11,15 @@ public class SearchResult {
     private SearchType type;
     private String newsUrl;
     private String imgUrl;
+    private boolean favourite;
+
+    public boolean isFavourite() {
+        return favourite;
+    }
+
+    public void setFavourite(boolean favourite) {
+        this.favourite = favourite;
+    }
 
     public String getName() {
         return name;
