@@ -7,7 +7,9 @@ INSERT INTO public.sites(id, description,language , popularity, clicks, news_cou
 (1, 'Strona piłkarska poświęcona newsom na temat ligi włoskiej', 'English', 0,0,0,0,'https://www.football-italia.net/sites/all/themes/italia/logo2.png',
  'https://www.football-italia.net','Football Italia'),
 (2, 'Strona oferująca dużą bazę informacji na temat najnowszych transferów', 'Polski',0,0,0,0,'https://transfery.info/img/logo/logo.png',
-'https://transfery.info','Transfery.info')
+'https://transfery.info','Transfery.info'),
+(3, 'Strona poświęcona newsom sportowym z całego świata', 'Polski',0,0,0,0,'https://bi.im-g.pl/im/0/24188/m24188910.png',
+'https://www.sport.pl/sport-hp/0,0.html','Sport.pl')
 ON CONFLICT DO NOTHING;
 -- Ligi
 INSERT INTO public.leagues(id,apisportid, name, logo_url, type) VALUES

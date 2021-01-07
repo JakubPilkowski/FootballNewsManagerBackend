@@ -8,6 +8,7 @@ import com.footballnewsmanager.backend.api.response.search.SearchResponse;
 import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.models.*;
 import com.footballnewsmanager.backend.parsers.football_italia.Football_Italia_Parser;
+import com.footballnewsmanager.backend.parsers.sport_pl.SportPlParser;
 import com.footballnewsmanager.backend.parsers.transfery_info.TransferyInfoParser;
 import com.footballnewsmanager.backend.repositories.*;
 import com.footballnewsmanager.backend.services.PaginationService;
@@ -27,8 +28,6 @@ import javax.transaction.Transactional;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @RestController
@@ -39,6 +38,7 @@ public class NewsController {
 
     private final Football_Italia_Parser footballItaliaParser;
     private final TransferyInfoParser transferyInfoParser;
+    private final SportPlParser sportPlParser;
     private final NewsRepository newsRepository;
     private final TeamRepository teamRepository;
     private final UserService userService;
@@ -47,9 +47,10 @@ public class NewsController {
     private final UserTeamRepository userTeamRepository;
     private final UserNewsRepository userNewsRepository;
 
-    public NewsController(Football_Italia_Parser footballItaliaParser, TransferyInfoParser transferyInfoParser, NewsRepository newsRepository, TeamRepository teamRepository, UserService userService, MarkerRepository markerRepository, UserRepository userRepository, UserTeamRepository userTeamRepository, UserNewsRepository userNewsRepository) {
+    public NewsController(Football_Italia_Parser footballItaliaParser, TransferyInfoParser transferyInfoParser, SportPlParser sportPlParser, NewsRepository newsRepository, TeamRepository teamRepository, UserService userService, MarkerRepository markerRepository, UserRepository userRepository, UserTeamRepository userTeamRepository, UserNewsRepository userNewsRepository) {
         this.footballItaliaParser = footballItaliaParser;
         this.transferyInfoParser = transferyInfoParser;
+        this.sportPlParser = sportPlParser;
         this.newsRepository = newsRepository;
         this.teamRepository = teamRepository;
         this.userService = userService;
@@ -303,22 +304,10 @@ public class NewsController {
     public String addNewsFromFootballItalia() {
         List<Marker> markers = markerRepository.findAll();
         List<User> users = userRepository.findAll();
-        footballItaliaParser.getNews(markers, users);
-        transferyInfoParser.getNews(markers, users);
+//        sportPlParser.getNews(markers, users);
+//        footballItaliaParser.getNews(markers, users);
+//        transferyInfoParser.getNews(markers, users);
         return "success";
-    }
-
-    @PreAuthorize("hasAuthority('ADMIN')")
-    @GetMapping("/tmp")
-    @Transactional()
-    public void deleteOldNews() {
-//        LocalDateTime localDateTime = LocalDateTime.now();
-        LocalTime localTime = LocalTime.now();
-        String formattedLocalTime = localTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-        System.out.println(formattedLocalTime);
-//        LocalDate localDate = LocalDate.now().minusDays(7);
-//        LocalDateTime localDateTime= localDate.atStartOfDay();
-//        newsRepository.deleteByDateLessThan(localDateTime);
     }
 
 }
