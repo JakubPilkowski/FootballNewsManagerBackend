@@ -45,11 +45,11 @@ public class ParsersScheduling {
     public void uploadTransferyInfoNews() {
         List<Marker> markerList = markerRepository.findAll();
         List<User> users = userRepository.findAll();
-//        transferyInfoParser.getNews(markerList, users);
-//        footballItaliaParser.getNews(markerList, users);
-//        sportPlParser.getNews(markerList, users);
-//        sportoweFaktyParser.getNews(markerList, users);
-//        interiaParser.getNews(markerList, users);
+        footballItaliaParser.getNews(markerList, users);
+        transferyInfoParser.getNews(markerList, users);
+        sportPlParser.getNews(markerList, users);
+        sportoweFaktyParser.getNews(markerList, users);
+        interiaParser.getNews(markerList, users);
     }
 
     @Scheduled(cron = "0 0 12 * * *")
