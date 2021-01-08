@@ -187,6 +187,12 @@ public class LeaguesHelper {
             case "FC Schalke 04":
                 markersList.add("Schalke");
                 break;
+            case "Atletico Madrid":
+                markersList.add("Atletico Madryt");
+                break;
+            case "Hong-Kong":
+                markersList.add("Hong Kong");
+                break;
         }
         return markersList;
     }

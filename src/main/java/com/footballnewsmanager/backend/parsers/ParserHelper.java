@@ -64,7 +64,7 @@ public class ParserHelper {
     public static Set<Tag> getTags(List<Marker> markers, String article, TagRepository tagRepository) {
         Set<Tag> tagSet = new HashSet<>();
         for (Marker marker : markers) {
-            if (article.contains(marker.getName().toLowerCase())) {
+            if (article.contains(marker.getName())) {
                 Tag tag = tagRepository.findByName(marker.getName()).orElseGet(() -> {
                     Tag newTag = new Tag();
                     newTag.setName(marker.getName());
