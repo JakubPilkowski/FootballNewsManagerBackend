@@ -3,7 +3,9 @@ package com.footballnewsmanager.backend.sheduling;
 import com.footballnewsmanager.backend.models.Marker;
 import com.footballnewsmanager.backend.models.User;
 import com.footballnewsmanager.backend.parsers.football_italia.Football_Italia_Parser;
+import com.footballnewsmanager.backend.parsers.interia_parser.InteriaParser;
 import com.footballnewsmanager.backend.parsers.sport_pl.SportPlParser;
+import com.footballnewsmanager.backend.parsers.sportowe_fakty.SportoweFaktyParser;
 import com.footballnewsmanager.backend.parsers.transfery_info.TransferyInfoParser;
 import com.footballnewsmanager.backend.repositories.MarkerRepository;
 import com.footballnewsmanager.backend.repositories.NewsRepository;
@@ -25,14 +27,18 @@ public class ParsersScheduling {
     private final MarkerRepository markerRepository;
     private final UserRepository userRepository;
     private final SportPlParser sportPlParser;
+    private final SportoweFaktyParser sportoweFaktyParser;
+    private final InteriaParser interiaParser;
 
-    public ParsersScheduling(Football_Italia_Parser footballItaliaParser, TransferyInfoParser transferyInfoParser, NewsRepository newsRepository, MarkerRepository markerRepository, UserRepository userRepository, SportPlParser sportPlParser) {
+    public ParsersScheduling(Football_Italia_Parser footballItaliaParser, TransferyInfoParser transferyInfoParser, NewsRepository newsRepository, MarkerRepository markerRepository, UserRepository userRepository, SportPlParser sportPlParser, SportoweFaktyParser sportoweFaktyParser, InteriaParser interiaParser) {
         this.footballItaliaParser = footballItaliaParser;
         this.transferyInfoParser = transferyInfoParser;
         this.newsRepository = newsRepository;
         this.markerRepository = markerRepository;
         this.userRepository = userRepository;
         this.sportPlParser = sportPlParser;
+        this.sportoweFaktyParser = sportoweFaktyParser;
+        this.interiaParser = interiaParser;
     }
 
     @Scheduled(cron = "0 0,20,40 0,8-23 * * *")
@@ -42,6 +48,8 @@ public class ParsersScheduling {
 //        transferyInfoParser.getNews(markerList, users);
 //        footballItaliaParser.getNews(markerList, users);
 //        sportPlParser.getNews(markerList, users);
+//        sportoweFaktyParser.getNews(markerList, users);
+//        interiaParser.getNews(markerList, users);
     }
 
     @Scheduled(cron = "0 0 12 * * *")

@@ -70,13 +70,16 @@ public class LeaguesHelper {
     public void fetchTeamsFromTranslateApi(TeamResponse teamResponse, League league) {
         Team team = new Team();
         String teamNameMarker = teamResponse.getTeam().getName();
+        if (teamNameMarker.equals("Inter"))
+            teamNameMarker = "Inter ";
         Set<String> markersList = listInitWithExceptions(teamResponse);
         markersList.add(teamNameMarker);
+        String finalTeamNameMarker = teamNameMarker;
         getTranslationMono(googleTranslateApi, teamNameMarker)
                 .subscribe(translateResponse -> {
                     String repairedTranslationName = translateExceptionsRepair(getTranslatedText(translateResponse));
                     team.setName(!markersList.contains(repairedTranslationName) ?
-                            repairedTranslationName : teamNameMarker);
+                            repairedTranslationName : finalTeamNameMarker);
                     markersList.add(repairedTranslationName);
                     team.setLeague(league);
                     team.setLogoUrl(teamResponse.getTeam().getLogo());
@@ -107,7 +110,6 @@ public class LeaguesHelper {
                         team.setName(!teamMarkers.contains(repairedTranslationName) ?
                                 repairedTranslationName : teamNameMarker);
                         teamMarkers.add(repairedTranslationName);
-
                         if (countryResponse.getName().equals("Moldova")) {
                             teamMarkers.add("Mołdawia");
                             team.setName("Mołdawia");
@@ -125,7 +127,6 @@ public class LeaguesHelper {
                         } else if (iterator.hasNext()) {
                             fetchAnotherTeamData(iterator.next());
                         }
-
                     });
         } else if (countriesIterator.hasNext()) {
             fetchCountriesFromTranslateApi(countriesIterator.next(), league);
@@ -190,9 +191,6 @@ public class LeaguesHelper {
             case "Atletico Madrid":
                 markersList.add("Atletico Madryt");
                 break;
-            case "Hong-Kong":
-                markersList.add("Hong Kong");
-                break;
         }
         return markersList;
     }
@@ -220,7 +218,7 @@ public class LeaguesHelper {
                 repairedValue = "Bologna";
                 break;
             case "Pochować":
-                repairedValue = "Inter";
+                repairedValue = "Inter ";
                 break;
             case "Strasburg":
                 repairedValue = "Strasbourg";
@@ -285,11 +283,11 @@ public class LeaguesHelper {
         return repairedValue;
     }
 
-    public void connectUsersWithTeam(Team team){
+    public void connectUsersWithTeam(Team team) {
         List<User> users = userRepository.findAll();
 
         List<UserTeam> userTeams = new ArrayList<>();
-        for(User user: users){
+        for (User user : users) {
             UserTeam userTeam = new UserTeam();
             userTeam.setUser(user);
             userTeam.setTeam(team);

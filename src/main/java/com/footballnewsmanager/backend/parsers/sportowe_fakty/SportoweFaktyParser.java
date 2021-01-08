@@ -102,13 +102,7 @@ public class SportoweFaktyParser {
             Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, tagsContentFull, tagRepository));
             if (tagSet.size() > 0) {
                 News news = ParserHelper.saveNews(site, newsId, title, newsUrl, imgUrl, localDate, siteRepository, newsRepository);
-                for (Tag tag :
-                        tagSet) {
-                    NewsTag newsTag = new NewsTag();
-                    newsTag.setNews(news);
-                    newsTag.setTag(tag);
-                    newsTagRepository.save(newsTag);
-                }
+                ParserHelper.saveNewsTags(tagSet, news, newsTagRepository);
                 ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository, markerRepository, teamRepository);
                 ParserHelper.connectNewsWithUsers(users, news, teamNewsRepository,
                         userTeamRepository, userNewsRepository);
