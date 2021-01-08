@@ -20,7 +20,7 @@ public class ParserHelper {
                                             TeamNewsRepository teamNewsRepository,
                                             MarkerRepository markerRepository,
                                             TeamRepository teamRepository) {
-
+        List<TeamNews> teamNewsList = new ArrayList<>();
         for (Tag tag : tagSet) {
             Marker marker = markerRepository.findByName(tag.getName()).orElseThrow(() -> new ResourceNotFoundException(""));
             Team team = marker.getTeam();
@@ -28,19 +28,20 @@ public class ParserHelper {
                 TeamNews teamNews = new TeamNews();
                 teamNews.setNews(news);
                 teamNews.setTeam(team);
+                teamNewsList.add(teamNews);
                 team.setNewsCount(team.getNewsCount() + 1);
                 team.measurePopularity();
                 teamRepository.save(team);
-                teamNewsRepository.save(teamNews);
             }
         }
+        teamNewsRepository.saveAll(teamNewsList);
     }
 
     public static void connectNewsWithUsers(
             List<User> users, News news,
             TeamNewsRepository teamNewsRepository, UserTeamRepository userTeamRepository,
             UserNewsRepository userNewsRepository) {
-
+        List<UserNews> userNewsList = new ArrayList<>();
         for (User user : users) {
             boolean exists = false;
             Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
@@ -57,8 +58,9 @@ public class ParserHelper {
             userNews.setUser(user);
             userNews.setInFavourites(exists);
             userNews.setBadged(isBadgeVisited);
-            userNewsRepository.save(userNews);
+            userNewsList.add(userNews);
         }
+        userNewsRepository.saveAll(userNewsList);
     }
 
     public static Set<Tag> getTags(List<Marker> markers, String article, TagRepository tagRepository) {
@@ -94,5 +96,17 @@ public class ParserHelper {
         return newsRepository.save(news);
     }
 
+
+    public static void saveNewsTags(Set<Tag>tagSet, News news, NewsTagRepository newsTagRepository){
+        List<NewsTag>newsTags = new ArrayList<>();
+        for (Tag tag :
+                tagSet) {
+            NewsTag newsTag = new NewsTag();
+            newsTag.setNews(news);
+            newsTag.setTag(tag);
+            newsTags.add(newsTag);
+        }
+        newsTagRepository.saveAll(newsTags);
+    }
 
 }

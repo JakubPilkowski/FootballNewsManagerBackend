@@ -8,6 +8,7 @@ import com.footballnewsmanager.backend.api.response.search.SearchResponse;
 import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.models.*;
 import com.footballnewsmanager.backend.parsers.football_italia.Football_Italia_Parser;
+import com.footballnewsmanager.backend.parsers.interia_parser.InteriaParser;
 import com.footballnewsmanager.backend.parsers.sport_pl.SportPlParser;
 import com.footballnewsmanager.backend.parsers.sportowe_fakty.SportoweFaktyParser;
 import com.footballnewsmanager.backend.parsers.transfery_info.TransferyInfoParser;
@@ -41,6 +42,7 @@ public class NewsController {
     private final TransferyInfoParser transferyInfoParser;
     private final SportPlParser sportPlParser;
     private final SportoweFaktyParser sportoweFaktyParser;
+    private final InteriaParser interiaParser;
     private final NewsRepository newsRepository;
     private final TeamRepository teamRepository;
     private final UserService userService;
@@ -49,11 +51,12 @@ public class NewsController {
     private final UserTeamRepository userTeamRepository;
     private final UserNewsRepository userNewsRepository;
 
-    public NewsController(Football_Italia_Parser footballItaliaParser, TransferyInfoParser transferyInfoParser, SportPlParser sportPlParser, SportoweFaktyParser sportoweFaktyParser, NewsRepository newsRepository, TeamRepository teamRepository, UserService userService, MarkerRepository markerRepository, UserRepository userRepository, UserTeamRepository userTeamRepository, UserNewsRepository userNewsRepository) {
+    public NewsController(Football_Italia_Parser footballItaliaParser, TransferyInfoParser transferyInfoParser, SportPlParser sportPlParser, SportoweFaktyParser sportoweFaktyParser, InteriaParser interiaParser, NewsRepository newsRepository, TeamRepository teamRepository, UserService userService, MarkerRepository markerRepository, UserRepository userRepository, UserTeamRepository userTeamRepository, UserNewsRepository userNewsRepository) {
         this.footballItaliaParser = footballItaliaParser;
         this.transferyInfoParser = transferyInfoParser;
         this.sportPlParser = sportPlParser;
         this.sportoweFaktyParser = sportoweFaktyParser;
+        this.interiaParser = interiaParser;
         this.newsRepository = newsRepository;
         this.teamRepository = teamRepository;
         this.userService = userService;
@@ -307,10 +310,11 @@ public class NewsController {
     public String addNewsFromFootballItalia() {
         List<Marker> markers = markerRepository.findAll();
         List<User> users = userRepository.findAll();
+        interiaParser.getNews(markers, users);
         sportoweFaktyParser.getNews(markers, users);
-//        sportPlParser.getNews(markers, users);
-//        footballItaliaParser.getNews(markers, users);
-//        transferyInfoParser.getNews(markers, users);
+        sportPlParser.getNews(markers, users);
+        footballItaliaParser.getNews(markers, users);
+        transferyInfoParser.getNews(markers, users);
         return "success";
     }
 
