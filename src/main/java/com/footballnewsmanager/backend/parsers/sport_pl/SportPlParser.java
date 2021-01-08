@@ -29,8 +29,6 @@ public class SportPlParser {
     private final TagRepository tagRepository;
     private final TeamNewsRepository teamNewsRepository;
     private final NewsTagRepository newsTagRepository;
-    private final UserService userService;
-    private final UserRepository userRepository;
     private final UserTeamRepository userTeamRepository;
     private final UserNewsRepository userNewsRepository;
 
@@ -45,8 +43,6 @@ public class SportPlParser {
         this.tagRepository = tagRepository;
         this.teamNewsRepository = teamNewsRepository;
         this.newsTagRepository = newsTagRepository;
-        this.userService = userService;
-        this.userRepository = userRepository;
         this.userTeamRepository = userTeamRepository;
         this.userNewsRepository = userNewsRepository;
     }
@@ -55,9 +51,7 @@ public class SportPlParser {
     public void getNews(List<Marker> markers, List<User> users) {
         Document sportPlMainDoc;
         String sportPlMainUrl = "https://www.sport.pl/pilka/0,0.html#TRNavSST";
-
         Site site = siteRepository.findById(3L).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej strony"));
-
         try {
             sportPlMainDoc = Jsoup.connect(sportPlMainUrl).get();
 
