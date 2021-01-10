@@ -19,5 +19,5 @@ public interface TeamRepository extends PagingAndSortingRepository<Team, Long> {
 
     Page<Team> findByUserTeamsUser(User user, Pageable pageable);
 
-    Page<Team> findByUserTeamsUserAndTeamNewsNewsAndUserTeamsFavouriteIsTrue(User user, News singleAllUserNews, Pageable pageable);
+    Page<Team> findDistinctByUserTeamsUserAndTeamNewsNewsAndUserTeamsFavouriteIsTrue(User user, News singleAllUserNews, Pageable pageable);
 }

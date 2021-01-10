@@ -85,7 +85,7 @@ public class InteriaParser {
         LocalDateTime currentLocalDate = LocalDateTime.now().minusDays(7);
         if (localDate.isAfter(currentLocalDate)) {
             String tagsContent = element.getElementsByTag("p").text().replace("Interia", "");
-            Set<Tag> tagSet = ParserHelper.getTags(markers, tagsContent, tagRepository);
+            Set<Tag> tagSet = ParserHelper.getTags(markers, title + tagsContent, tagRepository);
             if (tagSet.size() > 0) {
                 News news = ParserHelper.saveNews(site, newsId, title, newsUrl, imgUrl, localDate, siteRepository, newsRepository);
                 ParserHelper.saveNewsTags(tagSet, news, newsTagRepository);
