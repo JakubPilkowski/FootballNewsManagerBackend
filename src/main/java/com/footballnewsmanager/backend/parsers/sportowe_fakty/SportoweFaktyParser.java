@@ -87,17 +87,15 @@ public class SportoweFaktyParser {
         if (localDate.getSecond() == 0) {
             localDate = localDate.withSecond(1);
         }
-        System.out.println(title);
-        System.out.println(imgUrl);
         if (localDate.isAfter(LocalDateTime.now().minusDays(7))) {
             Elements elements = mainElement.get(0).getElementsByTag("p");
             for (Element element : elements) {
                 if (element.children().is("strong")) {
-                    element.remove();
+                    element.children().remove();
                 }
             }
             String tagsContent = elements.text();
-            String secondaryTitle = mainElement.select("span").attr("class", "h5").text();
+            String secondaryTitle = mainElement.select("span").get(0).text();
             String tagsContentFull = (title + " " + secondaryTitle + " " + tagsContent).replace("Interia", "");
             Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, tagsContentFull, tagRepository));
             if (tagSet.size() > 0) {
