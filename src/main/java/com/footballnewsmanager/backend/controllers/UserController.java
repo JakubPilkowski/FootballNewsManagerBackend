@@ -43,27 +43,28 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final UserTeamRepository userTeamRepository;
-    private final UserSiteRepository userSiteRepository;
+//    private final UserSiteRepository userSiteRepository;
     private final BlacklistTokenRepository blacklistTokenRepository;
     private final RoleRepository roleRepository;
     private final TeamRepository teamRepository;
     private final SiteRepository siteRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserService userService;
-    private final NewsRepository newsRepository;
     private final UserNewsRepository userNewsRepository;
 
-    public UserController(UserRepository userRepository, UserTeamRepository userTeamRepository, TeamRepository teamRepository, UserSiteRepository userSiteRepository, JwtTokenProvider tokenProvider, BlacklistTokenRepository blacklistTokenRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder, UserService userService, SiteRepository siteRepository, NewsRepository newsRepository, UserNewsRepository userNewsRepository) {
+    public UserController(UserRepository userRepository, UserTeamRepository userTeamRepository, TeamRepository teamRepository,
+                          BlacklistTokenRepository blacklistTokenRepository, RoleRepository roleRepository,
+                          PasswordEncoder passwordEncoder, UserService userService, SiteRepository siteRepository,
+                          UserNewsRepository userNewsRepository) {
         this.userRepository = userRepository;
         this.userTeamRepository = userTeamRepository;
-        this.userSiteRepository = userSiteRepository;
+//        this.userSiteRepository = userSiteRepository;
         this.blacklistTokenRepository = blacklistTokenRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.userService = userService;
         this.teamRepository = teamRepository;
         this.siteRepository = siteRepository;
-        this.newsRepository = newsRepository;
         this.userNewsRepository = userNewsRepository;
     }
 
@@ -248,42 +249,42 @@ public class UserController {
     //na razie nie, aplikacja jest za mała i ta opcja nie ma na tę chwile sensu,
     // w przyszłości przy obsłudze wielojęzykowości i dużej ilości stron ma to sens
 
-    @PutMapping("me/addSite/{id}")
-    @JsonView(Views.Public.class)
-    public User addSite(@PathVariable("id") @NotNull @Min(value = 0) Long id) {
-        return userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
-            Site site = siteRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej strony!"));
-            if (!userSiteRepository.findByUserAndSite(user, site).isPresent()) {
-                UserSite userSite = new UserSite();
-                userSite.setSite(site);
-                userSite.setUser(user);
-                site.setChosenAmount(site.getChosenAmount() + 1);
-                site.measurePopularity();
-                siteRepository.save(site);
-                userSiteRepository.save(userSite);
-                return user;
-            } else {
-                throw new BadRequestException("Podana strona jest już dodana!");
-            }
-        });
-    }
-
-
-    @DeleteMapping("me/removeSite/{id}")
-    @JsonView(Views.Public.class)
-    @Transactional
-    public User removeSite(@PathVariable("id") @NotNull @Min(value = 0) Long id) {
-        return userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
-            try {
-                Site site = siteRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej strony!"));
-                userSiteRepository.deleteByUserAndSite(user, site);
-                site.setChosenAmount(site.getChosenAmount() - 1);
-                site.measurePopularity();
-                siteRepository.save(site);
-                return user;
-            } catch (EmptyResultDataAccessException exception) {
-                throw new ResourceNotFoundException("Podany użytkownik nie ma podanej strony!", exception);
-            }
-        });
-    }
+//    @PutMapping("me/addSite/{id}")
+//    @JsonView(Views.Public.class)
+//    public User addSite(@PathVariable("id") @NotNull @Min(value = 0) Long id) {
+//        return userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
+//            Site site = siteRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej strony!"));
+//            if (!userSiteRepository.findByUserAndSite(user, site).isPresent()) {
+//                UserSite userSite = new UserSite();
+//                userSite.setSite(site);
+//                userSite.setUser(user);
+//                site.setChosenAmount(site.getChosenAmount() + 1);
+//                site.measurePopularity();
+//                siteRepository.save(site);
+//                userSiteRepository.save(userSite);
+//                return user;
+//            } else {
+//                throw new BadRequestException("Podana strona jest już dodana!");
+//            }
+//        });
+//    }
+//
+//
+//    @DeleteMapping("me/removeSite/{id}")
+//    @JsonView(Views.Public.class)
+//    @Transactional
+//    public User removeSite(@PathVariable("id") @NotNull @Min(value = 0) Long id) {
+//        return userService.checkUserExistByTokenAndOnSuccess(userRepository, (user) -> {
+//            try {
+//                Site site = siteRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej strony!"));
+//                userSiteRepository.deleteByUserAndSite(user, site);
+//                site.setChosenAmount(site.getChosenAmount() - 1);
+//                site.measurePopularity();
+//                siteRepository.save(site);
+//                return user;
+//            } catch (EmptyResultDataAccessException exception) {
+//                throw new ResourceNotFoundException("Podany użytkownik nie ma podanej strony!", exception);
+//            }
+//        });
+//    }
 }

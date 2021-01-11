@@ -2,6 +2,7 @@ package com.footballnewsmanager.backend.start_up;
 
 import com.footballnewsmanager.backend.helpers.LeaguesHelper;
 import com.footballnewsmanager.backend.models.Role;
+import com.footballnewsmanager.backend.models.RoleName;
 import com.footballnewsmanager.backend.models.User;
 import com.footballnewsmanager.backend.repositories.RoleRepository;
 import com.footballnewsmanager.backend.repositories.TeamRepository;
@@ -43,16 +44,31 @@ public class AdminAccInitialization implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (!userRepository.existsByUsernameOrEmail(username, email)) {
-            User user = new User(username, email, password);
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
-            LocalDateTime localDateTime = LocalDateTime.now();
-            String format = dateTimeFormatter.format(localDateTime);
-            user.setAddedDate(LocalDateTime.parse(format, dateTimeFormatter));
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-            List<Role> roles = roleRepository.findAll();
-            Set<Role> roleSet = new HashSet<>(roles);
-            user.setRoles(roleSet);
-            userRepository.save(user);
+            List<User> users = new ArrayList<>();
+            users.add(createSuperAdmin());
+            users.add(createTestUser());
+            userRepository.saveAll(users);
         }
     }
+
+    public User createSuperAdmin(){
+        User user = new User(username, email, password);
+        LocalDateTime localDateTime = LocalDateTime.now();
+        user.setAddedDate(localDateTime);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        List<Role> roles = roleRepository.findAll();
+        Set<Role> roleSet = new HashSet<>(roles);
+        user.setRoles(roleSet);
+        return user;
+    }
+    public User createTestUser(){
+        User user = new User("tester", "tester@gmail.com", "retsetfnm");
+        LocalDateTime localDateTime = LocalDateTime.now();
+        user.setAddedDate(localDateTime);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        Optional<Role> role = roleRepository.findByName(RoleName.USER);
+        role.ifPresent(value -> user.setRoles(Collections.singleton(value)));
+        return user;
+    }
+
 }

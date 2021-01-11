@@ -310,11 +310,11 @@ public class NewsController {
     public String addNewsFromFootballItalia() {
         List<Marker> markers = markerRepository.findAll();
         List<User> users = userRepository.findAll();
-        interiaParser.getNews(markers, users);
-        sportoweFaktyParser.getNews(markers, users);
         sportPlParser.getNews(markers, users);
         footballItaliaParser.getNews(markers, users);
         transferyInfoParser.getNews(markers, users);
+        interiaParser.getNews(markers, users);
+        sportoweFaktyParser.getNews(markers, users);
         return "success";
     }
 

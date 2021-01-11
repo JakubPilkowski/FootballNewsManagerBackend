@@ -8,6 +8,7 @@ import com.footballnewsmanager.backend.repositories.*;
 import com.footballnewsmanager.backend.services.UserService;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
 
@@ -54,8 +55,13 @@ public class SportPlParser {
         Site site = siteRepository.findById(3L).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej strony"));
         try {
             sportPlMainDoc = Jsoup.connect(sportPlMainUrl).get();
-
-            List<String> tmp = sportPlMainDoc.getElementsByTag("article").get(2).select("h3").select("a").eachAttr("href");
+            Elements elements = sportPlMainDoc.getElementsByTag("section");
+            for(Element element: elements){
+                if(!element.hasClass("body")){
+                    element.remove();
+                }
+            }
+            List<String> tmp = elements.get(4).select("a").eachAttr("href");
             for (String tmpNewsUrl : tmp) {
                 Long newsId = Long.valueOf(tmpNewsUrl.split(",")[2]);
                 if (!newsRepository.existsBySiteIdAndId(site.getId(), newsId)) {

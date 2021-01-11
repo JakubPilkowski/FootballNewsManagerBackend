@@ -51,8 +51,8 @@ public class Site {
     @JsonView(Views.Public.class)
     private Long newsCount = 0L;
 
-    @JsonView(Views.Internal.class)
-    private Long chosenAmount = 0L;
+//    @JsonView(Views.Internal.class)
+//    private Long chosenAmount = 0L;
 
 
     @OneToMany(mappedBy = "site", fetch = FetchType.LAZY)
@@ -60,9 +60,9 @@ public class Site {
     private List<News> news = new ArrayList<>();
 
 
-    @OneToMany(mappedBy = "site")
-    @JsonBackReference(value = "userSites")
-    private List<UserSite> userSites = new ArrayList<>();
+//    @OneToMany(mappedBy = "site")
+//    @JsonBackReference(value = "userSites")
+//    private List<UserSite> userSites = new ArrayList<>();
 
     public Long getId() {
         return id;
@@ -88,13 +88,13 @@ public class Site {
         this.logoUrl = logoUrl;
     }
 
-    public List<UserSite> getUserSites() {
-        return userSites;
-    }
+//    public List<UserSite> getUserSites() {
+//        return userSites;
+//    }
 
-    public void setUserSites(List<UserSite> userSites) {
-        this.userSites = userSites;
-    }
+//    public void setUserSites(List<UserSite> userSites) {
+//        this.userSites = userSites;
+//    }
 
     public String getDescription() {
         return description;
@@ -136,18 +136,18 @@ public class Site {
         this.newsCount = newsCount;
     }
 
-    public Long getChosenAmount() {
-        return chosenAmount;
-    }
+//    public Long getChosenAmount() {
+//        return chosenAmount;
+//    }
 
-    public void setChosenAmount(Long chosenAmount) {
-        this.chosenAmount = chosenAmount;
-    }
+//    public void setChosenAmount(Long chosenAmount) {
+//        this.chosenAmount = chosenAmount;
+//    }
 
     public void measurePopularity(){
         setPopularity(getClicks()* Multipliers.CLICK_MULTIPLIER
-                +getNewsCount()* Multipliers.NEWS_MULTIPLIER
-                +getChosenAmount()* Multipliers.CHOSEN_BY_MULTIPLIER);
+                +getNewsCount()* Multipliers.NEWS_MULTIPLIER);
+//                +getChosenAmount()* Multipliers.CHOSEN_BY_MULTIPLIER);
     }
 
     public String getSiteUrl() {
