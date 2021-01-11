@@ -10,9 +10,9 @@ import javax.persistence.*;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
-@Entity
-@Table(name = "user_sites")
-@JsonView(Views.Public.class)
+//@Entity
+//@Table(name = "user_sites")
+//@JsonView(Views.Public.class)
 public class UserSite {
 
     @Id

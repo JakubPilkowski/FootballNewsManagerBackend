@@ -56,9 +56,9 @@ public class User {
     @JsonIgnore()
     private List<UserTeam> userTeams = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore()
-    private List<UserSite> userSites = new ArrayList<>();
+//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+//    @JsonIgnore()
+//    private List<UserSite> userSites = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore()
@@ -123,13 +123,13 @@ public class User {
         this.userTeams = userTeams;
     }
 
-    public List<UserSite> getUserSites() {
-        return userSites;
-    }
+//    public List<UserSite> getUserSites() {
+//        return userSites;
+//    }
 
-    public void setUserSites(List<UserSite> userSites) {
-        this.userSites = userSites;
-    }
+//    public void setUserSites(List<UserSite> userSites) {
+//        this.userSites = userSites;
+//    }
 
     public Set<Role> getRoles() {
         return roles;

@@ -60,7 +60,7 @@ public class SportoweFaktyParser {
             List<String> newsLinks = sportoweFaktyMainDoc.getElementsByClass("streamshort__title").select("a").eachAttr("href");
             for (String link :
                     newsLinks) {
-                if (!link.contains("wideo") && !link.contains("sportowybar")) {
+                if (!link.contains("wideo") && !link.contains("sportowybar") && !link.contains("zdjecia")) {
                     Long newsId = Long.valueOf(link.split("/")[2]);
                     if (!newsRepository.existsBySiteIdAndId(site.getId(), newsId)) {
                         String fullNewsUrl = sportoweFaktyMainUrl + link;
@@ -82,6 +82,9 @@ public class SportoweFaktyParser {
         Elements mainElement = doc.getElementsByTag("article");
         String title = mainElement.select("h1").text();
         String imgUrl = mainElement.get(0).getElementsByClass("image").select("img").attr("data-lsrc");
+        if (imgUrl.isEmpty()) {
+            imgUrl = "No image";
+        }
         String date = mainElement.select("time").attr("datetime");
         LocalDateTime localDate = LocalDateTime.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         if (localDate.getSecond() == 0) {

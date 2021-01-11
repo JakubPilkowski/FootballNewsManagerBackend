@@ -24,7 +24,6 @@ public class League {
     @Min(value = 0, message = ValidationMessage.ID_LESS_THAN_ZERO)
     private Long id;
 
-
     @NotBlank(message = ValidationMessage.API_SPORT_ID_NOT_BLANK)
     @JsonIgnore
     private int apisportid;
