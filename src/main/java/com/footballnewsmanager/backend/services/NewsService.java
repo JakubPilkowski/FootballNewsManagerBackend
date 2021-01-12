@@ -38,14 +38,9 @@ public class NewsService {
         for (UserNews singleAllUserNews : allUserNews) {
             Page<Team> teams = teamRepository.findDistinctByUserTeamsUserAndTeamNewsNewsAndUserTeamsFavouriteIsTrue
                     (user, singleAllUserNews.getNews(), pageable);
-            System.out.println(teams.getContent().size() + " " + teams.getContent().contains(team));
             if (teams.getContent().contains(team) && teams.getTotalElements() == 1) {
                 singleAllUserNews.setInFavourites(false);
-            }else{
-                for (Team singleTeam :
-                        teams.getContent()) {
-                    System.out.println(singleTeam.getName());
-                }
+                singleAllUserNews.setBadged(true);
             }
         }
         userNewsRepository.saveAll(allUserNews.getContent());

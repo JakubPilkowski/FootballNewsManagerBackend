@@ -15,7 +15,7 @@ public class UserService {
         return userRepository.findByUsername(username).map(user -> {
             onPresentInterface.onSuccess(user);
             return user;
-        }).orElseThrow(()-> new ResourceNotFoundException("Nie ma takiego użytkownika!"));
+        }).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiego użytkownika!"));
     }
 
     public User checkUserExistByTokenAndOnSuccess(UserRepository userRepository, OnPresentInterface<User> onPresentInterface) {
@@ -23,7 +23,6 @@ public class UserService {
         return userRepository.findById(userPrincipal.getId()).map(tmpUser -> {
             onPresentInterface.onSuccess(tmpUser);
             return tmpUser;
-        }).orElseThrow(()-> new ResourceNotFoundException("Nie ma takiego użytkownika!"));
+        }).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiego użytkownika!"));
     }
-
 }
