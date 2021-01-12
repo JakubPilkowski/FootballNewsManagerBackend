@@ -23,8 +23,8 @@ public class PasswordResetToken {
     @OneToOne()
     private User user;
 
-    @NotNull(message = ValidationMessage.DATE_NOT_BLANK)
-    private Date expiryDate;
+//    @NotNull(message = ValidationMessage.DATE_NOT_BLANK)
+//    private Date expiryDate;
 
     public Long getId() {
         return id;
@@ -50,11 +50,11 @@ public class PasswordResetToken {
         this.user = user;
     }
 
-    public Date getExpiryDate() {
-        return expiryDate;
-    }
+//    public Date getExpiryDate() {
+//        return expiryDate;
+//    }
 
-    public void setExpiryDate(Date expiryDate) {
-        this.expiryDate = expiryDate;
-    }
+//    public void setExpiryDate(Date expiryDate) {
+//        this.expiryDate = expiryDate;
+//    }
 }

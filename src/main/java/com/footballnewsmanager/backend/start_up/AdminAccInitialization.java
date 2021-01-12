@@ -62,7 +62,7 @@ public class AdminAccInitialization implements CommandLineRunner {
         return user;
     }
     public User createTestUser(){
-        User user = new User("tester", "tester@gmail.com", "retsetfnm");
+        User user = new User("tester", "testerfnm@gmail.com", "retsetfnm");
         LocalDateTime localDateTime = LocalDateTime.now();
         user.setAddedDate(localDateTime);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
