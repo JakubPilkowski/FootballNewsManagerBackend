@@ -1,7 +1,5 @@
 package com.footballnewsmanager.backend.parsers;
 
-import com.footballnewsmanager.backend.exceptions.BadRequestException;
-import com.footballnewsmanager.backend.exceptions.ResourceNotFoundException;
 import com.footballnewsmanager.backend.models.*;
 import com.footballnewsmanager.backend.repositories.*;
 import org.springframework.data.domain.Page;
@@ -10,21 +8,23 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Component
 public class ParserHelper {
 
 
-    public static void connectNewsWithTeams(Set<Tag> tagSet, News news,
+    public static void connectNewsWithTeams(Set<Marker> markerSet, News news,
                                             TeamNewsRepository teamNewsRepository,
-                                            MarkerRepository markerRepository,
                                             TeamRepository teamRepository) {
         List<TeamNews> teamNewsList = new ArrayList<>();
-        for (Tag tag : tagSet) {
-            Marker marker = markerRepository.findByName(tag.getName()).orElseThrow(() -> new ResourceNotFoundException(""));
+        Set<Team> teams = new HashSet<>();
+        for (Marker marker : markerSet) {
             Team team = marker.getTeam();
-            if (!teamNewsRepository.existsByTeamAndNews(team, news)) {
+            if (!teams.contains(team)) {
                 TeamNews teamNews = new TeamNews();
                 teamNews.setNews(news);
                 teamNews.setTeam(team);
@@ -33,6 +33,7 @@ public class ParserHelper {
                 team.measurePopularity();
                 teamRepository.save(team);
             }
+            teams.add(team);
         }
         teamNewsRepository.saveAll(teamNewsList);
     }
@@ -63,20 +64,14 @@ public class ParserHelper {
         userNewsRepository.saveAll(userNewsList);
     }
 
-    public static Set<Tag> getTags(List<Marker> markers, String article, TagRepository tagRepository) {
-        Set<Tag> tagSet = new HashSet<>();
+    public static Set<Marker> getMarkers(List<Marker> markers, String article) {
+        Set<Marker> markerSet = new HashSet<>();
         for (Marker marker : markers) {
             if (article.contains(marker.getName())) {
-                Tag tag = tagRepository.findByName(marker.getName()).orElseGet(() -> {
-                    Tag newTag = new Tag();
-                    newTag.setName(marker.getName());
-                    newTag = tagRepository.save(newTag);
-                    return newTag;
-                });
-                tagSet.add(tag);
+                markerSet.add(marker);
             }
         }
-        return tagSet;
+        return markerSet;
     }
 
     public static News saveNews(Site site, Long newsId, String title, String newsUrl,
@@ -94,19 +89,6 @@ public class ParserHelper {
         site.measurePopularity();
         siteRepository.save(site);
         return newsRepository.save(news);
-    }
-
-
-    public static void saveNewsTags(Set<Tag>tagSet, News news, NewsTagRepository newsTagRepository){
-        List<NewsTag>newsTags = new ArrayList<>();
-        for (Tag tag :
-                tagSet) {
-            NewsTag newsTag = new NewsTag();
-            newsTag.setNews(news);
-            newsTag.setTag(tag);
-            newsTags.add(newsTag);
-        }
-        newsTagRepository.saveAll(newsTags);
     }
 
 }

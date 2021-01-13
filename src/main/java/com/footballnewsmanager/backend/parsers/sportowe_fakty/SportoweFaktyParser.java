@@ -5,46 +5,34 @@ import com.footballnewsmanager.backend.models.*;
 import com.footballnewsmanager.backend.parsers.ParserHelper;
 import com.footballnewsmanager.backend.repositories.*;
 import org.jsoup.Jsoup;
-import org.jsoup.internal.StringUtil;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
 
 @Component
 public class SportoweFaktyParser {
     private final SiteRepository siteRepository;
     private final NewsRepository newsRepository;
     private final TeamRepository teamRepository;
-    private final MarkerRepository markerRepository;
-    private final TagRepository tagRepository;
     private final TeamNewsRepository teamNewsRepository;
-    private final NewsTagRepository newsTagRepository;
     private final UserTeamRepository userTeamRepository;
     private final UserNewsRepository userNewsRepository;
 
     public SportoweFaktyParser(SiteRepository siteRepository, NewsRepository newsRepository, TeamRepository teamRepository,
-                               MarkerRepository markerRepository, TagRepository tagRepository, TeamNewsRepository teamNewsRepository,
-                               NewsTagRepository newsTagRepository, UserTeamRepository userTeamRepository,
+                               TeamNewsRepository teamNewsRepository, UserTeamRepository userTeamRepository,
                                UserNewsRepository userNewsRepository) {
         this.siteRepository = siteRepository;
         this.newsRepository = newsRepository;
         this.teamRepository = teamRepository;
-        this.markerRepository = markerRepository;
-        this.tagRepository = tagRepository;
         this.teamNewsRepository = teamNewsRepository;
-        this.newsTagRepository = newsTagRepository;
         this.userTeamRepository = userTeamRepository;
         this.userNewsRepository = userNewsRepository;
     }
@@ -100,11 +88,10 @@ public class SportoweFaktyParser {
             String tagsContent = elements.text();
             String secondaryTitle = mainElement.select("span").get(0).text();
             String tagsContentFull = (title + " " + secondaryTitle + " " + tagsContent).replace("Interia", "");
-            Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, tagsContentFull, tagRepository));
-            if (tagSet.size() > 0) {
+            Set<Marker> markerSet = new HashSet<>(ParserHelper.getMarkers(markers, tagsContentFull));
+            if (markerSet.size() > 0) {
                 News news = ParserHelper.saveNews(site, newsId, title, newsUrl, imgUrl, localDate, siteRepository, newsRepository);
-                ParserHelper.saveNewsTags(tagSet, news, newsTagRepository);
-                ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository, markerRepository, teamRepository);
+                ParserHelper.connectNewsWithTeams(markerSet, news, teamNewsRepository, teamRepository);
                 ParserHelper.connectNewsWithUsers(users, news, teamNewsRepository,
                         userTeamRepository, userNewsRepository);
             }

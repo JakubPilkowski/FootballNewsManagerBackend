@@ -26,24 +26,17 @@ public class SportPlParser {
     private final SiteRepository siteRepository;
     private final NewsRepository newsRepository;
     private final TeamRepository teamRepository;
-    private final MarkerRepository markerRepository;
-    private final TagRepository tagRepository;
     private final TeamNewsRepository teamNewsRepository;
-    private final NewsTagRepository newsTagRepository;
     private final UserTeamRepository userTeamRepository;
     private final UserNewsRepository userNewsRepository;
 
     public SportPlParser(SiteRepository siteRepository, NewsRepository newsRepository, TeamRepository teamRepository,
-                         MarkerRepository markerRepository, TagRepository tagRepository, TeamNewsRepository teamNewsRepository,
-                         NewsTagRepository newsTagRepository, UserService userService, UserRepository userRepository,
-                         UserTeamRepository userTeamRepository, UserNewsRepository userNewsRepository) {
+                         TeamNewsRepository teamNewsRepository, UserTeamRepository userTeamRepository,
+                         UserNewsRepository userNewsRepository) {
         this.siteRepository = siteRepository;
         this.newsRepository = newsRepository;
         this.teamRepository = teamRepository;
-        this.markerRepository = markerRepository;
-        this.tagRepository = tagRepository;
         this.teamNewsRepository = teamNewsRepository;
-        this.newsTagRepository = newsTagRepository;
         this.userTeamRepository = userTeamRepository;
         this.userNewsRepository = userNewsRepository;
     }
@@ -56,8 +49,8 @@ public class SportPlParser {
         try {
             sportPlMainDoc = Jsoup.connect(sportPlMainUrl).get();
             Elements elements = sportPlMainDoc.getElementsByTag("section");
-            for(Element element: elements){
-                if(!element.hasClass("body")){
+            for (Element element : elements) {
+                if (!element.hasClass("body")) {
                     element.remove();
                 }
             }
@@ -88,11 +81,10 @@ public class SportPlParser {
         LocalDateTime localDate = LocalDateTime.parse(date + localTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         LocalDateTime currentLocalDate = LocalDateTime.now().minusDays(7);
         if (localDate.isAfter(currentLocalDate)) {
-            Set<Tag> tagSet = new HashSet<>(ParserHelper.getTags(markers, tags, tagRepository));
-            if (tagSet.size() > 0) {
+            Set<Marker> markerSet = new HashSet<>(ParserHelper.getMarkers(markers, tags));
+            if (markerSet.size() > 0) {
                 News news = ParserHelper.saveNews(site, newsId, title, newsUrl, imgUrl, localDate, siteRepository, newsRepository);
-                ParserHelper.saveNewsTags(tagSet, news, newsTagRepository);
-                ParserHelper.connectNewsWithTeams(tagSet, news, teamNewsRepository, markerRepository, teamRepository);
+                ParserHelper.connectNewsWithTeams(markerSet, news, teamNewsRepository, teamRepository);
                 ParserHelper.connectNewsWithUsers(users, news, teamNewsRepository,
                         userTeamRepository, userNewsRepository);
             }

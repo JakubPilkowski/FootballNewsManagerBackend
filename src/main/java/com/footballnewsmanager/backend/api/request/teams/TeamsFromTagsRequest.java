@@ -1,14 +1,14 @@
 package com.footballnewsmanager.backend.api.request.teams;
 
-import com.footballnewsmanager.backend.models.Tag;
+import com.footballnewsmanager.backend.models.TeamNews;
 
 import java.util.List;
 
 public class TeamsFromTagsRequest {
 
-    private List<Tag> tags;
+    private List<TeamNews> teamNews;
 
-    public List<Tag> getTags() {
-        return tags;
+    public List<TeamNews> getTeamNews() {
+        return teamNews;
     }
 }
