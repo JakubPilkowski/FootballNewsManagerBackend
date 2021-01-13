@@ -1,6 +1,10 @@
 package com.footballnewsmanager.backend.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.footballnewsmanager.backend.api.request.auth.ValidationMessage;
+import com.footballnewsmanager.backend.views.Views;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -11,6 +15,7 @@ import javax.validation.constraints.NotNull;
 
 
 @Entity
+@JsonView(Views.Public.class)
 public class TeamNews {
 
     @Id
@@ -46,6 +51,7 @@ public class TeamNews {
     private Team team;
 
     @ManyToOne
+    @JsonIgnore
     private News news;
 
 }

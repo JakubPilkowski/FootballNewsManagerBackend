@@ -99,20 +99,13 @@ public class TeamsController {
     public ResponseEntity<TeamsResponse> findByTags(@RequestBody TeamsFromTagsRequest request) {
 
         TeamsResponse teamsResponse = new TeamsResponse();
-
         userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
-            Set<String> names = new HashSet<>();
-            for (Tag tag : request.getTags()) {
-                names.add(tag.getName());
+            List<Long> ids = new ArrayList<>();
+            for (TeamNews team : request.getTeamNews()) {
+                ids.add(team.getTeam().getId());
             }
-            Pageable pageable = PageRequest.of(0, names.size());
-
-            Page<Team> teams = teamRepository.findDistinctByMarkersNameIn(names, pageable);
-
-            Pageable userTeamsPageable = PageRequest.of(0, names.size(), Sort.by(Sort.Direction.DESC, "team.popularity"));
-
-            Page<UserTeam> userTeams = userTeamRepository.findByUserAndTeamIn(user, teams.getContent(), userTeamsPageable);
-
+            Pageable pageable = PageRequest.of(0, request.getTeamNews().size(), Sort.by(Sort.Direction.DESC, "favourite"));
+            Page<UserTeam> userTeams = userTeamRepository.findByUserAndTeamIdIn(user, ids, pageable);
             teamsResponse.setTeams(userTeams.getContent());
             return user;
         });

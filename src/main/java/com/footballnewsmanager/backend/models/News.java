@@ -50,15 +50,9 @@ public class News {
 
     @ManyToOne
     @JoinColumn(name = "site")
-    @JsonView(Views.Public.class)
     private Site site;
 
     @OneToMany(mappedBy = "news", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonView(Views.Public.class)
-    private Set<NewsTag> tags = new HashSet<>();
-
-    @OneToMany(mappedBy = "news", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore()
     private List<TeamNews> teamNews = new ArrayList<>();
 
     @OneToMany(mappedBy = "news", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -150,15 +144,7 @@ public class News {
         this.id = news_id;
     }
 
-    public Set<NewsTag> getTags() {
-        return tags;
-    }
-
-    public void setTags(Set<NewsTag> tags) {
-        this.tags = tags;
-    }
-
-      public double getPopularity() {
+    public double getPopularity() {
         return popularity;
     }
 
@@ -174,9 +160,9 @@ public class News {
         this.likes = likes;
     }
 
-    public void measurePopularity(){
-        setPopularity(getClicks()* Multipliers.CLICK_MULTIPLIER
-                +getLikes()* Multipliers.LIKED);
+    public void measurePopularity() {
+        setPopularity(getClicks() * Multipliers.CLICK_MULTIPLIER
+                + getLikes() * Multipliers.LIKED);
     }
 
     public List<UserNews> getUserNews() {

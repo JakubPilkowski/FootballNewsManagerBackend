@@ -90,7 +90,7 @@ public class NewsController {
 
 
     @GetMapping(value = "all", params = {"page", "proposed"})
-    @JsonView(Views.Internal.class)
+    @JsonView(Views.Public.class)
     public ResponseEntity<AllNewsResponse> getNews(@RequestParam("page") @Min(value = 0) int page,
                                                    @RequestParam("proposed") boolean proposed) {
         AllNewsResponse allNewsResponse = new AllNewsResponse();

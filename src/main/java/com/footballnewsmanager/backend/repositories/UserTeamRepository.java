@@ -22,6 +22,8 @@ public interface UserTeamRepository extends PagingAndSortingRepository<UserTeam,
 
     Page<UserTeam> findByUserAndTeamIn(User user, List<Team> teams, Pageable pageable);
 
+    Page<UserTeam> findByUserAndTeamIdIn(User user, List<Long> ids, Pageable pageable);
+
     Page<UserTeam> findByUser(User user, Pageable pageable);
 
     Page<UserTeam> findByUserAndFavouriteIsFalse(User user, Pageable teamsPageable);
