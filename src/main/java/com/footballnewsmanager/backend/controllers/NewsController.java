@@ -126,19 +126,12 @@ public class NewsController {
         userService.checkUserExistByTokenAndOnSuccess(userRepository, user -> {
             Pageable pageable = PageRequest.of(page, 20, Sort.by(Sort.Direction.DESC, "news.date"));
             Page<UserNews> liked = userNewsRepository.findByUserAndLikedIsTrue(user, pageable);
+            PaginationService.handlePaginationErrors(page, liked);
             newsResponse.setUserNews(liked.getContent());
             newsResponse.setPages(liked.getTotalPages());
             return user;
         });
         return ResponseEntity.ok(newsResponse);
-    }
-
-    @GetMapping("site={sid}/id={id}")
-    @JsonView(Views.Public.class)
-    public ResponseEntity<News> getNewsByIds(@PathVariable("sid") @Min(value = 0) Long sid,
-                                             @PathVariable("id") @Min(value = 0) Long id) {
-        News news = newsRepository.findBySiteIdAndId(sid, id).orElseThrow(() -> new ResourceNotFoundException("Nie ma takiej wiadomości"));
-        return ResponseEntity.ok(news);
     }
 
     @GetMapping(value = "/team={id}", params = {"page"})
