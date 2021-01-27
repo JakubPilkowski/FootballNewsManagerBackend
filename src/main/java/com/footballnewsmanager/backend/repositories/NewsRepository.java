@@ -19,6 +19,8 @@ public interface NewsRepository extends PagingAndSortingRepository<News, Long> {
 
     boolean existsBySiteIdAndId(Long siteId, Long id);
 
+    Page<News> findByDateLessThan(LocalDateTime localDateTime,Pageable pageable);
+
     void deleteByDateLessThan(LocalDateTime localDateTime);
 
     Optional<News> findBySiteIdAndId(Long sid, Long lid);
